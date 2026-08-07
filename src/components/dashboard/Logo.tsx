@@ -1,9 +1,12 @@
+import { FiCreditCard } from "react-icons/fi";
+
 export default function Logo({ className = "" }: { className?: string }) {
   return (
-    <img
-      src="/app-logo.png"
-      alt="Sharemint Logo"
-      className={`object-contain ${className}`}
-    />
+    <span
+      aria-label="Sharemint Logo"
+      className={`inline-flex items-center justify-center rounded-(--btn-radius) bg-(--color-primary) text-white shadow-sm ${className}`}
+    >
+      <FiCreditCard className="h-[58%] w-[58%]" aria-hidden="true" />
+    </span>
   );
 }

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import useAuth from "../hooks/useAuth";
+import { FiCreditCard } from "react-icons/fi";
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -39,20 +40,7 @@ export default function AuthPage() {
           {/* App Logo & Title */}
           <div className="flex flex-col items-center gap-3">
             <div className="w-14 h-14 rounded-(--btn-radius) bg-(--color-primary) flex items-center justify-center shadow-sm">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-7 h-7 text-(--color-surface)"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-                />
-              </svg>
+              <FiCreditCard className="h-[58%] w-[58%]" aria-hidden="true" />
             </div>
             <div className="text-center flex flex-col gap-1">
               <h1 className="text-2xl font-bold tracking-tight text-(--color-text)">
