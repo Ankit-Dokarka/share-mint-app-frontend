@@ -1,0 +1,13 @@
+import { createContext } from "react";
+import type { User } from "../../types/user";
+
+type AuthContextType = {
+  user: User | null;
+  googleLogin: (idToken: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  isLoading: boolean;
+  error: string;
+  clearError: () => void;
+};
+
+export const AuthContext = createContext<AuthContextType | null>(null);

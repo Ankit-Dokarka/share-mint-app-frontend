@@ -1,0 +1,89 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+@import "tailwindcss";
+
+:root {
+  --color-bg: #e0f0e5;
+  --color-surface: #ffffff;
+  --color-navbar: #0f172a;
+  --color-navbar-hover: #1e293b;
+  --color-text: #111827;
+  --color-text-muted: #6b7280;
+  --color-sidebar-text: #cbd5e1;
+  --color-sidebar-active: #ffffff;
+  --color-primary: #059669;
+  --color-primary-hover: #047857;
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
+  --color-success: #16a34a;
+  --color-border: #d1d5db;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+  --btn-radius: 4px;
+}
+
+[data-theme="dark"] {
+  --color-bg: #0b1120;
+  --color-surface: #111827;
+  --color-navbar: #0f172a;
+  --color-navbar-hover: #1e293b;
+  --color-text: #f3f4f6;
+  --color-text-muted: #9ca3af;
+  --color-sidebar-text: #cbd5e1;
+  --color-sidebar-active: #ffffff;
+
+  --color-primary: #10b981;
+  --color-primary-hover: #34d399;
+
+  --color-danger: #f87171;
+  --color-danger-hover: #ef4444;
+  --color-success: #22c55e;
+
+  --color-border: #374151;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md:
+    0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+}
+
+body {
+  font-family: "Inter", system-ui, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-size: 16px;
+
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-text-muted);
+}
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
