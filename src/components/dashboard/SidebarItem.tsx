@@ -6,6 +6,7 @@ type SidebarItemProps = {
   icon: IconType;
   label: string;
   isCollapsed: boolean;
+  title?: string;
 };
 
 export default function SidebarItem({
@@ -13,10 +14,12 @@ export default function SidebarItem({
   icon: Icon,
   label,
   isCollapsed,
+  title,
 }: SidebarItemProps) {
   return (
     <NavLink
       to={to}
+      title={title}
       end={to === "/dashboard"}
       className={({ isActive }) =>
         `group relative flex items-center gap-3 px-4 py-3 rounded-(--btn-radius) transition-all duration-200 ${
