@@ -1,48 +1,54 @@
-import { FiSun, FiMoon } from "react-icons/fi";
+import { FiSun, FiMoon, FiSearch, FiBell, FiSettings } from "react-icons/fi";
 import useTheme from "../../context/theme/ThemeContext";
-import Logo from "./Logo";
 
 export default function Header() {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
 
   return (
-    <header className="h-16 bg-(--color-surface)/95 border-b border-(--color-border) flex items-center justify-between px-4 sm:px-6 md:px-8 lg:px-10 shrink-0 z-10">
+    <header className="h-16 bg-(--color-surface) border-b border-(--color-border) flex items-center justify-between px-4 sm:px-6 md:px-8 lg:px-10 shrink-0 z-10">
       <div className="flex items-center gap-3">
-        <Logo className="w-9 h-9" />
-        <span className="text-lg font-extrabold text-(--color-text)">
-          Sharemint
-        </span>
+        <div className="hidden sm:flex items-center gap-2 h-9 w-48 md:w-64 px-3 rounded-(--btn-radius) bg-(--color-surface-strong) border border-(--color-border) text-(--color-text-soft) cursor-pointer transition-colors hover:border-(--color-border-strong)">
+          <FiSearch size={16} />
+          <div className="h-3 w-24 bg-(--color-border) rounded-sm opacity-70"></div>
+        </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1 sm:gap-2">
+        <button className="h-9 w-9 flex items-center justify-center rounded-(--btn-radius) text-(--color-text-muted) hover:bg-(--color-surface-strong) hover:text-(--color-text) transition-colors">
+          <FiBell size={18} />
+        </button>
+        <button className="h-9 w-9 flex items-center justify-center rounded-(--btn-radius) text-(--color-text-muted) hover:bg-(--color-surface-strong) hover:text-(--color-text) transition-colors">
+          <FiSettings size={18} />
+        </button>
+
+        <div className="w-px h-6 bg-(--color-border) mx-1 sm:mx-2"></div>
+
         <button
           onClick={toggleTheme}
           aria-label="Toggle theme"
           title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-          className={`relative h-9 w-16 rounded-full border flex items-center transition-colors duration-300 ease-in-out ${
-            isDark
-              ? "bg-(--color-surface-strong) border-(--color-border-strong)"
-              : "bg-(--color-surface-strong) border-(--color-border)"
-          }`}
+          className="relative h-8 w-13 rounded-full bg-(--color-surface-strong) border border-(--color-border) flex items-center transition-colors duration-300"
         >
+          <FiSun
+            size={14}
+            className="absolute left-2 text-amber-500/80 pointer-events-none"
+          />
+          <FiMoon
+            size={14}
+            className="absolute right-2 text-(--color-primary)/80 pointer-events-none"
+          />
+
           <span
-            className={`absolute left-1.5 w-7 h-7 rounded-full bg-(--color-elevated) shadow-sm border border-(--color-border) flex items-center justify-center transition-transform duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] ${
-              isDark ? "translate-x-7" : "translate-x-0"
+            className={`absolute left-1 h-6 w-6 rounded-full bg-(--color-elevated) shadow-sm flex items-center justify-center transition-transform duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] ${
+              isDark ? "translate-x-5" : "translate-x-0"
             }`}
           >
-            <FiSun
-              size={14}
-              className={`absolute text-amber-500 transition-opacity duration-200 ${
-                isDark ? "opacity-0" : "opacity-100"
-              }`}
-            />
-            <FiMoon
-              size={14}
-              className={`absolute text-(--color-primary) transition-opacity duration-200 ${
-                isDark ? "opacity-100" : "opacity-0"
-              }`}
-            />
+            {isDark ? (
+              <FiMoon size={12} className="text-(--color-primary)" />
+            ) : (
+              <FiSun size={12} className="text-amber-500" />
+            )}
           </span>
         </button>
       </div>
