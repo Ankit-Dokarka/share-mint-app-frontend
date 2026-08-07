@@ -3,6 +3,7 @@ import { AuthContext } from "./AuthContext";
 import type { User } from "../../types/user";
 import { authAPI } from "../../api/auth/api";
 import Spinner from "../../components/auth/Spinner";
+import { getFriendlyError } from "../../utils/getFriendlyError";
 
 type AuthProviderProps = {
   children: ReactNode;
@@ -56,7 +57,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Google login failed");
+      setError(getFriendlyError(err));
       return false;
     } finally {
       setIsLoading(false);
@@ -69,7 +70,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(null);
       clearError();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Logout failed");
+      setError(getFriendlyError(err));
     }
   };
 
