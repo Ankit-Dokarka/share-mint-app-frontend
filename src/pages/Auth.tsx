@@ -30,7 +30,7 @@ export default function AuthPage() {
           alt="image for login page"
           className="w-full h-full object-cover object-center"
         />
-        <div className="absolute inset-0 bg-linear-to-t from-black/10 to-transparent pointer-events-none"></div>
+        <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
       </div>
 
       {/* Right side login card */}
@@ -56,7 +56,7 @@ export default function AuthPage() {
             </div>
             <div className="text-center flex flex-col gap-1">
               <h1 className="text-2xl font-bold tracking-tight text-(--color-text)">
-                Splitwise
+                Sharemint
               </h1>
               <p className="text-sm text-(--color-text-muted) font-medium">
                 Sign in to manage your expenses

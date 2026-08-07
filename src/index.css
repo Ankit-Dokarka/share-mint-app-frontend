@@ -1,56 +1,67 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap");
 
 @import "tailwindcss";
 
 :root {
-  --color-bg: #e0f0e5;
+  --font-heading: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+
+  --color-bg: #f8fafc;
   --color-surface: #ffffff;
-  --color-navbar: #0f172a;
-  --color-navbar-hover: #1e293b;
-  --color-text: #111827;
-  --color-text-muted: #6b7280;
-  --color-sidebar-text: #cbd5e1;
-  --color-sidebar-active: #ffffff;
-  --color-primary: #059669;
-  --color-primary-hover: #047857;
-  --color-danger: #dc2626;
-  --color-danger-hover: #b91c1c;
-  --color-success: #16a34a;
-  --color-border: #d1d5db;
+  --color-surface-strong: #f1f5f9;
+  --color-elevated: #ffffff;
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+  --color-text-soft: #94a3b8;
+  --color-primary: #10b981;
+  --color-primary-hover: #059669;
+  --color-primary-soft: #d1fae5;
+  --color-danger: #f43f5e;
+  --color-danger-hover: #e11d48;
+  --color-danger-soft: #ffe4e6;
+  --color-success: #14b8a6;
+  --color-success-soft: #ccfbf1;
+  --color-border: #e2e8f0;
+  --color-border-strong: #cbd5e1;
 
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md:
-    0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 12px 28px -18px rgba(15, 23, 42, 0.28);
+  --shadow-lg: 0 24px 48px -30px rgba(15, 23, 42, 0.34);
 
-  --btn-radius: 4px;
+  --btn-radius: 8px;
 }
 
 [data-theme="dark"] {
-  --color-bg: #0b1120;
-  --color-surface: #111827;
-  --color-navbar: #0f172a;
-  --color-navbar-hover: #1e293b;
-  --color-text: #f3f4f6;
-  --color-text-muted: #9ca3af;
-  --color-sidebar-text: #cbd5e1;
-  --color-sidebar-active: #ffffff;
-
+  --color-bg: #020617;
+  --color-surface: #0f172a;
+  --color-surface-strong: #1e293b;
+  --color-elevated: #111827;
+  --color-text: #f8fafc;
+  --color-text-muted: #cbd5e1;
+  --color-text-soft: #94a3b8;
   --color-primary: #10b981;
   --color-primary-hover: #34d399;
+  --color-primary-soft: rgba(16, 185, 129, 0.14);
+  --color-danger: #fb7185;
+  --color-danger-hover: #f43f5e;
+  --color-danger-soft: rgba(244, 63, 94, 0.14);
+  --color-success: #2dd4bf;
+  --color-success-soft: rgba(20, 184, 166, 0.14);
+  --color-border: #1e293b;
+  --color-border-strong: #334155;
 
-  --color-danger: #f87171;
-  --color-danger-hover: #ef4444;
-  --color-success: #22c55e;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.32);
+  --shadow-md: 0 18px 36px -24px rgba(0, 0, 0, 0.72);
+  --shadow-lg: 0 30px 60px -36px rgba(0, 0, 0, 0.78);
+}
 
-  --color-border: #374151;
-
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
-  --shadow-md:
-    0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+html {
+  background-color: var(--color-bg);
 }
 
 body {
-  font-family: "Inter", system-ui, sans-serif;
+  margin: 0;
+  font-family: var(--font-body);
   background-color: var(--color-bg);
   color: var(--color-text);
   font-size: 16px;
@@ -58,6 +69,23 @@ body {
   transition:
     background-color 0.3s ease,
     color 0.3s ease;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  letter-spacing: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 ::-webkit-scrollbar {

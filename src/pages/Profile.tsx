@@ -175,9 +175,7 @@ export default function Profile() {
       )}
 
       <div className="bg-(--color-surface) border border-(--color-border) rounded-(--btn-radius) shadow-sm overflow-hidden">
-        <div className="h-32 bg-linear-to-br from-(--color-primary) to-(--color-primary-hover) relative">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent_60%)]"></div>
-        </div>
+        <div className="h-32 bg-(--color-primary) relative"></div>
         <div className="px-6 pb-6 flex flex-col md:flex-row items-center gap-4">
           {/* Avatar Upload Container */}
           <div className="relative shrink-0 z-10 -mt-12">

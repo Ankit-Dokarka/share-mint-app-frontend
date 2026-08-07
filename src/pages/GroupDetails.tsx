@@ -88,7 +88,7 @@ export default function GroupDetails() {
   };
 
   return (
-    <section className="max-w-6xl mx-auto flex flex-col gap-6">
+    <section className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       <Link
         to="/dashboard/groups"
         className="inline-flex items-center gap-2 text-sm text-(--color-text-muted) hover:text-(--color-primary) transition-colors w-fit"
@@ -98,7 +98,7 @@ export default function GroupDetails() {
       </Link>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-28 bg-(--color-surface) border border-(--color-border) rounded-(--btn-radius)">
+        <div className="flex items-center justify-center py-28 bg-(--color-surface) border border-(--color-border) rounded-(--btn-radius) shadow-sm">
           <FiLoader className="animate-spin text-(--color-primary)" size={32} />
         </div>
       ) : error ? (
@@ -108,35 +108,62 @@ export default function GroupDetails() {
         </div>
       ) : group ? (
         <>
-          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-(--color-primary)/10 text-(--color-primary) rounded-(--btn-radius)">
+          <div className="rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface) p-5 shadow-sm md:p-6">
+            <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-(--color-primary-soft) text-(--color-primary) rounded-(--btn-radius)">
                 <FiUsers size={28} />
+                </div>
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-extrabold text-(--color-text)">
+                    {group.name}
+                  </h1>
+                  <p className="text-sm text-(--color-text-muted) mt-2">
+                    {group.members.length}{" "}
+                    {group.members.length === 1 ? "member" : "members"} · Total{" "}
+                    {formatINR(totalSpent)}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-(--color-text)">
-                  {group.name}
-                </h1>
-                <p className="text-sm text-(--color-text-muted) mt-1">
-                  {group.members.length}{" "}
-                  {group.members.length === 1 ? "member" : "members"} · Total{" "}
-                  {formatINR(totalSpent)}
-                </p>
-              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsAddExpenseOpen(true)}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-(--color-primary) hover:bg-(--color-primary-hover) text-white text-sm font-semibold rounded-(--btn-radius) transition-colors shadow-sm"
+              >
+                <FiPlus size={16} />
+                Add Expense
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setIsAddExpenseOpen(true)}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-(--color-primary) hover:bg-(--color-primary-hover) text-(--color-surface) text-sm font-medium rounded-(--btn-radius) transition-colors shadow-sm"
-            >
-              <FiPlus size={16} />
-              Add Expense
-            </button>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {group.members.map((member) => (
+                <div
+                  key={member._id}
+                  className="flex items-center gap-2 rounded-full border border-(--color-border) bg-(--color-surface-strong)/70 py-1 pl-1 pr-3"
+                >
+                  <div className="h-7 w-7 rounded-full bg-(--color-primary-soft) text-(--color-primary) text-xs font-bold flex items-center justify-center overflow-hidden">
+                    {member.avatar ? (
+                      <img
+                        src={member.avatar}
+                        alt={member.fullName}
+                        className="h-full w-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      member.fullName?.[0]?.toUpperCase() || "U"
+                    )}
+                  </div>
+                  <span className="max-w-36 truncate text-xs font-semibold text-(--color-text-muted)">
+                    {member.fullName}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div
-            className={`bg-(--color-surface) border rounded-(--btn-radius) p-5 shadow-sm ${
+            className={`bg-(--color-surface) border rounded-(--btn-radius) p-6 shadow-sm ${
               currentUserBalance?.toReceive
                 ? "border-(--color-success)/40"
                 : currentUserBalance?.toPay
@@ -144,11 +171,11 @@ export default function GroupDetails() {
                   : "border-(--color-border)"
             }`}
           >
-            <p className="text-xs font-semibold uppercase text-(--color-text-muted) tracking-wider">
+            <p className="text-xs font-semibold uppercase text-(--color-text-muted)">
               Your Balance
             </p>
             <p
-              className={`mt-2 text-xl font-bold ${
+              className={`mt-3 text-2xl font-extrabold md:text-3xl ${
                 currentUserBalance?.toReceive
                   ? "text-(--color-success)"
                   : currentUserBalance?.toPay
@@ -162,16 +189,20 @@ export default function GroupDetails() {
 
           {expenses.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center py-20 px-6 bg-(--color-surface) border border-(--color-border) rounded-(--btn-radius) shadow-sm">
-              <div className="w-16 h-16 flex items-center justify-center rounded-full bg-(--color-primary)/10 mb-5">
+              <div className="w-16 h-16 flex items-center justify-center rounded-full bg-(--color-primary-soft) mb-5">
                 <FiCreditCard size={28} className="text-(--color-primary)" />
               </div>
-              <h2 className="text-lg font-semibold text-(--color-text) mb-1.5">
+              <h2 className="text-xl font-bold text-(--color-text) mb-1.5">
                 No expenses yet
               </h2>
+              <p className="max-w-md text-sm leading-6 text-(--color-text-muted)">
+                Add the first expense to start calculating what each member has
+                to pay or to receive.
+              </p>
               <button
                 type="button"
                 onClick={() => setIsAddExpenseOpen(true)}
-                className="mt-5 flex items-center justify-center gap-2 px-4 py-2.5 bg-(--color-primary) hover:bg-(--color-primary-hover) text-(--color-surface) text-sm font-medium rounded-(--btn-radius) transition-colors shadow-sm"
+                className="mt-6 flex items-center justify-center gap-2 px-4 py-2.5 bg-(--color-primary) hover:bg-(--color-primary-hover) text-white text-sm font-semibold rounded-(--btn-radius) transition-colors shadow-sm"
               >
                 <FiPlus size={16} />
                 Add Expense
@@ -179,7 +210,7 @@ export default function GroupDetails() {
             </div>
           ) : (
             <div className="bg-(--color-surface) border border-(--color-border) rounded-(--btn-radius) shadow-sm overflow-hidden">
-              <div className="hidden md:grid grid-cols-12 gap-4 px-5 py-3 bg-(--color-bg)/60 border-b border-(--color-border) text-[11px] font-semibold text-(--color-text-muted) uppercase tracking-wider">
+              <div className="hidden md:grid grid-cols-12 gap-4 px-5 py-3 bg-(--color-surface-strong)/70 border-b border-(--color-border) text-[11px] font-semibold text-(--color-text-muted) uppercase">
                 <div className="col-span-3">Title</div>
                 <div className="col-span-3">Description</div>
                 <div className="col-span-2 text-right">Amount</div>
@@ -190,7 +221,7 @@ export default function GroupDetails() {
               {expenses.map((expense) => (
                 <div
                   key={expense._id}
-                  className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 px-5 py-4 border-b border-(--color-border) last:border-b-0 hover:bg-(--color-bg)/40 transition-colors"
+                  className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 px-5 py-4 border-b border-(--color-border) last:border-b-0 hover:bg-(--color-surface-strong)/55 transition-colors"
                 >
                   <div className="md:col-span-3 min-w-0">
                     <p className="font-semibold text-(--color-text) truncate">
@@ -219,14 +250,14 @@ export default function GroupDetails() {
           )}
 
           <div className="bg-(--color-surface) border border-(--color-border) rounded-(--btn-radius) p-5 shadow-sm">
-            <h2 className="text-sm font-bold text-(--color-text) uppercase tracking-wider mb-4">
+            <h2 className="text-sm font-bold text-(--color-text) uppercase mb-4">
               Group Balances
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {balances.map((balance) => (
                 <div
                   key={balance.user._id}
-                  className="flex items-center justify-between gap-4 p-3 bg-(--color-bg) rounded-(--btn-radius) border border-(--color-border)"
+                  className="flex items-center justify-between gap-4 p-3 bg-(--color-surface-strong)/70 rounded-(--btn-radius) border border-(--color-border)"
                 >
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-(--color-text) truncate">

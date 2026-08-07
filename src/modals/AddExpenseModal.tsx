@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { FiAlertCircle, FiLoader, FiX } from "react-icons/fi";
+import { FiAlertCircle, FiCheck, FiCreditCard, FiLoader, FiX } from "react-icons/fi";
 import { expenseAPI } from "../api/expense/api";
 import type { Group } from "../types/groups";
 
@@ -106,11 +106,21 @@ export default function AddExpenseModal({
         onClick={isSubmitting ? undefined : onClose}
       ></div>
 
-      <div className="relative z-10 w-full max-w-md bg-(--color-surface) rounded-(--btn-radius) shadow-lg border border-(--color-border) overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="relative z-10 w-full max-w-xl bg-(--color-surface) rounded-(--btn-radius) shadow-lg border border-(--color-border) overflow-hidden max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-5 border-b border-(--color-border) shrink-0">
-          <h3 className="text-base font-semibold text-(--color-text)">
-            Add Expense
-          </h3>
+          <div className="flex items-center gap-3">
+            <div className="rounded-(--btn-radius) bg-(--color-primary-soft) p-2 text-(--color-primary)">
+              <FiCreditCard size={20} />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-(--color-text)">
+                Add Expense
+              </h3>
+              <p className="text-xs text-(--color-text-muted)">
+                Split evenly across selected participants.
+              </p>
+            </div>
+          </div>
           <button
             onClick={onClose}
             className="text-(--color-text-muted) hover:text-(--color-text) transition-colors p-1 rounded-(--btn-radius) hover:bg-(--color-bg)"
@@ -131,7 +141,7 @@ export default function AddExpenseModal({
             )}
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-(--color-text)">
+              <label className="text-sm font-semibold text-(--color-text)">
                 Title <span className="text-(--color-danger)">*</span>
               </label>
               <input
@@ -140,7 +150,7 @@ export default function AddExpenseModal({
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 disabled={isSubmitting}
-                className="w-full px-4 py-2.5 text-sm bg-(--color-bg) border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary) focus:border-transparent transition-all disabled:opacity-70"
+                className="w-full px-4 py-3 text-sm text-(--color-text) placeholder:text-(--color-text-soft) bg-(--color-surface-strong)/70 border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/25 focus:border-(--color-primary) transition-all disabled:opacity-70"
               />
               {errors.title && (
                 <p className="text-xs text-(--color-danger)">{errors.title}</p>
@@ -148,7 +158,7 @@ export default function AddExpenseModal({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-(--color-text)">
+              <label className="text-sm font-semibold text-(--color-text)">
                 Description
               </label>
               <input
@@ -157,12 +167,12 @@ export default function AddExpenseModal({
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 disabled={isSubmitting}
-                className="w-full px-4 py-2.5 text-sm bg-(--color-bg) border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary) focus:border-transparent transition-all disabled:opacity-70"
+                className="w-full px-4 py-3 text-sm text-(--color-text) placeholder:text-(--color-text-soft) bg-(--color-surface-strong)/70 border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/25 focus:border-(--color-primary) transition-all disabled:opacity-70"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-(--color-text)">
+              <label className="text-sm font-semibold text-(--color-text)">
                 Amount <span className="text-(--color-danger)">*</span>
               </label>
               <div className="relative">
@@ -177,7 +187,7 @@ export default function AddExpenseModal({
                   value={amount}
                   onChange={(event) => setAmount(event.target.value)}
                   disabled={isSubmitting}
-                  className="w-full pl-8 pr-4 py-2.5 text-sm bg-(--color-bg) border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary) focus:border-transparent transition-all disabled:opacity-70"
+                  className="w-full pl-8 pr-4 py-3 text-sm text-(--color-text) placeholder:text-(--color-text-soft) bg-(--color-surface-strong)/70 border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/25 focus:border-(--color-primary) transition-all disabled:opacity-70"
                 />
               </div>
               {errors.amount && (
@@ -186,14 +196,14 @@ export default function AddExpenseModal({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-(--color-text)">
+              <label className="text-sm font-semibold text-(--color-text)">
                 Paid By <span className="text-(--color-danger)">*</span>
               </label>
               <select
                 value={paidBy}
                 onChange={(event) => setPaidBy(event.target.value)}
                 disabled={isSubmitting}
-                className="w-full px-4 py-2.5 text-sm bg-(--color-bg) border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary) focus:border-transparent transition-all disabled:opacity-70"
+                className="w-full px-4 py-3 text-sm text-(--color-text) bg-(--color-surface-strong)/70 border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/25 focus:border-(--color-primary) transition-all disabled:opacity-70"
               >
                 {members.map((member) => (
                   <option key={member._id} value={member._id}>
@@ -207,44 +217,67 @@ export default function AddExpenseModal({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-(--color-text)">
+              <label className="text-sm font-semibold text-(--color-text)">
                 Split Rule
               </label>
               <input
                 type="text"
                 value="Equal"
                 disabled
-                className="w-full px-4 py-2.5 text-sm bg-(--color-bg) border border-(--color-border) rounded-(--btn-radius) text-(--color-text-muted)"
+                className="w-full px-4 py-3 text-sm bg-(--color-surface-strong)/70 border border-(--color-border) rounded-(--btn-radius) text-(--color-text-muted)"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-(--color-text)">
+              <label className="text-sm font-semibold text-(--color-text)">
                 Participants <span className="text-(--color-danger)">*</span>
               </label>
-              <div className="max-h-48 overflow-y-auto flex flex-col gap-1 border border-(--color-border) rounded-(--btn-radius) p-2 bg-(--color-bg)">
+              <div className="max-h-56 overflow-y-auto grid gap-2 border border-(--color-border) rounded-(--btn-radius) p-2 bg-(--color-surface-strong)/70">
                 {members.map((member) => {
                   const isChecked = participantIds.includes(member._id);
 
                   return (
                     <label
                       key={member._id}
-                      className={`flex items-center gap-2 p-2 rounded transition-colors ${
+                      className={`flex items-center justify-between gap-3 p-3 rounded-(--btn-radius) border transition-colors ${
                         isChecked
-                          ? "bg-(--color-primary)/5"
-                          : "hover:bg-(--color-surface)"
+                          ? "bg-(--color-primary-soft) border-(--color-primary)/25"
+                          : "border-(--color-border) bg-(--color-surface) hover:border-(--color-primary)/30"
                       } ${isTwoPersonGroup ? "cursor-not-allowed" : "cursor-pointer"}`}
                     >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="h-9 w-9 rounded-full bg-(--color-primary-soft) text-(--color-primary) text-sm font-bold flex items-center justify-center overflow-hidden">
+                          {member.avatar ? (
+                            <img
+                              src={member.avatar}
+                              alt={member.fullName}
+                              className="h-full w-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            member.fullName?.[0]?.toUpperCase() || "U"
+                          )}
+                        </div>
+                        <span className="truncate text-sm font-medium text-(--color-text)">
+                          {member.fullName}
+                        </span>
+                      </div>
+                      <span
+                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
+                          isChecked
+                            ? "border-(--color-primary) bg-(--color-primary) text-white"
+                            : "border-(--color-border-strong) bg-(--color-surface)"
+                        }`}
+                      >
+                        {isChecked && <FiCheck size={13} />}
+                      </span>
                       <input
                         type="checkbox"
                         checked={isChecked}
                         disabled={isTwoPersonGroup || isSubmitting}
                         onChange={() => toggleParticipant(member._id)}
-                        className="w-4 h-4 rounded text-(--color-primary) focus:ring-(--color-primary)"
+                        className="sr-only"
                       />
-                      <span className="text-sm text-(--color-text) truncate">
-                        {member.fullName}
-                      </span>
                     </label>
                   );
                 })}
@@ -257,19 +290,19 @@ export default function AddExpenseModal({
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 p-5 bg-(--color-bg)/30 border-t border-(--color-border) shrink-0">
+          <div className="flex justify-end gap-3 p-5 bg-(--color-surface-strong)/50 border-t border-(--color-border) shrink-0">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2 text-sm font-medium text-(--color-text) bg-(--color-surface) border border-(--color-border) rounded-(--btn-radius) hover:bg-(--color-bg) transition-colors shadow-sm disabled:opacity-70"
+              className="px-4 py-2.5 text-sm font-semibold text-(--color-text) bg-(--color-surface) border border-(--color-border) rounded-(--btn-radius) hover:bg-(--color-surface-strong) transition-colors shadow-sm disabled:opacity-70"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-(--color-surface) bg-(--color-primary) hover:bg-(--color-primary-hover) rounded-(--btn-radius) transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-(--color-primary) hover:bg-(--color-primary-hover) rounded-(--btn-radius) transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>

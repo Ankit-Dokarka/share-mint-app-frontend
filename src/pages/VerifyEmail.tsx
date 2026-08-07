@@ -94,7 +94,7 @@ export default function VerifyEmail() {
       <div className="relative w-full max-w-md bg-(--color-surface)/80 backdrop-blur-xl border border-(--color-border) shadow-2xl rounded-2xl p-8 md:p-10 flex flex-col gap-8 z-10">
         {/* Header Section */}
         <div className="text-center flex flex-col gap-4">
-          <div className="mx-auto w-16 h-16 flex items-center justify-center rounded-2xl bg-linear-to-br from-(--color-primary) to-(--color-primary-hover) shadow-lg shadow-(--color-primary)/30 mb-2">
+          <div className="mx-auto w-16 h-16 flex items-center justify-center rounded-2xl bg-(--color-primary) shadow-lg shadow-(--color-primary)/30 mb-2">
             <FiShield className="text-white" size={28} />
           </div>
           <div>
@@ -143,7 +143,7 @@ export default function VerifyEmail() {
           <button
             type="submit"
             disabled={!isComplete || isVerifying}
-            className="w-full p-3 rounded-xl bg-linear-to-r from-(--color-primary) to-(--color-primary-hover) text-white font-semibold tracking-wide flex justify-center items-center gap-2 cursor-pointer transition-all duration-200 shadow-md hover:shadow-lg hover:shadow-(--color-primary)/30 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-md"
+            className="w-full p-3 rounded-xl bg-(--color-primary) hover:bg-(--color-primary-hover) text-white font-semibold flex justify-center items-center gap-2 cursor-pointer transition-all duration-200 shadow-md hover:shadow-lg hover:shadow-(--color-primary)/30 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-md"
           >
             {isVerifying ? (
               <>
