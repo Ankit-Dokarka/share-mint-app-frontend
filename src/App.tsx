@@ -14,6 +14,7 @@ import VerificationRoute from "./routes/VerificationRoute";
 import GoogleSignIn from "./pages/AuthTest";
 import Transactions from "./pages/Transactions";
 import GroupDetails from "./pages/GroupDetails";
+import LandingPage from "./pages/LandingPage";
 
 export default function App() {
   return (
@@ -22,9 +23,11 @@ export default function App() {
         <Route path="test" element={<GoogleSignIn />} />
 
         <Route element={<PublicRoute />}>
-          <Route path="/" element={<AuthPage />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<AuthPage />} />
         </Route>
 
+        {/* Protected Routes (Requires login) */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />
@@ -35,11 +38,11 @@ export default function App() {
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
 
-            {/* REMOVED THE LEADING SLASH HERE */}
             <Route path="groups/:groupId" element={<GroupDetails />} />
           </Route>
         </Route>
 
+        {/* Verification Routes */}
         <Route element={<VerificationRoute />}>
           <Route path="/verify-email" element={<VerifyEmail />} />
         </Route>
