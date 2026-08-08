@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FiArrowRight,
   FiSun,
@@ -7,7 +7,7 @@ import {
   FiMenu,
   FiX,
 } from "react-icons/fi";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import useTheme from "../../context/theme/ThemeContext";
 
 const navLinks = [
@@ -17,14 +17,82 @@ const navLinks = [
   { label: "FAQ", href: "#faq" },
 ];
 
+const MouseTrackingButton = ({
+  children,
+  className = "",
+  onClick,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+}) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    e.currentTarget.style.setProperty(
+      "--mouse-x",
+      `${e.clientX - rect.left}px`,
+    );
+    e.currentTarget.style.setProperty("--mouse-y", `${e.clientY - rect.top}px`);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onMouseMove={handleMouseMove}
+      style={
+        {
+          "--mouse-x": "0px",
+          "--mouse-y": "0px",
+        } as React.CSSProperties
+      }
+      className={`
+        group
+        relative
+        inline-flex
+        items-center
+        justify-center
+        gap-2
+        overflow-hidden
+        rounded-(--btn-radius)
+        bg-(--color-primary)
+        font-semibold
+        text-white
+        transition-all
+        duration-300
+        hover:shadow-md
+        ${className}
+      `}
+    >
+      <span className="absolute inset-0 z-0 bg-[#be123c] [clip-path:circle(0%_at_var(--mouse-x)_var(--mouse-y))] transition-[clip-path] duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:[clip-path:circle(150%_at_var(--mouse-x)_var(--mouse-y))]"></span>
+
+      <span className="relative z-10 flex items-center gap-2">{children}</span>
+    </button>
+  );
+};
+
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isShrunk, setIsShrunk] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsShrunk(window.scrollY > 40);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <header className="fixed top-0 left-0 z-50 w-full px-4 pt-3">
-      <nav className="mx-auto w-full max-w-5xl">
+      <nav
+        className={`mx-auto w-full transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] ${
+          isShrunk ? "max-w-2xl" : "max-w-5xl"
+        }`}
+      >
         <div
           className="
             flex
@@ -38,7 +106,6 @@ export default function Navbar() {
             shadow-(--shadow-sm)
           "
         >
-          {/* Logo */}
           <Link
             to="/"
             className="flex items-center gap-2 shrink-0"
@@ -52,24 +119,25 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden flex-1 items-center justify-center md:flex">
+          <div
+            className={`hidden flex-1 items-center justify-center md:flex transition-opacity duration-300 ease-in-out ${
+              isShrunk ? "opacity-0 pointer-events-none" : "opacity-100"
+            }`}
+          >
             <nav aria-label="Primary navigation">
               <ul className="flex items-center gap-7">
                 {navLinks.map((link) => (
-                  <li key={link.label}>
+                  <li key={link.label} className="h-5">
                     <a
                       href={link.href}
-                      className="
-                        text-sm
-                        font-medium
-                        text-(--color-text-muted)
-                        transition-colors
-                        duration-200
-                        hover:text-(--color-text)
-                      "
+                      className="group relative flex h-5 overflow-hidden text-sm font-medium text-(--color-text-muted) transition-colors duration-200 hover:text-(--color-text)"
                     >
-                      {link.label}
+                      <span className="block leading-5 transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:-translate-y-full">
+                        {link.label}
+                      </span>
+                      <span className="absolute left-0 top-0 block translate-y-full leading-5 transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:translate-y-0">
+                        {link.label}
+                      </span>
                     </a>
                   </li>
                 ))}
@@ -77,9 +145,7 @@ export default function Navbar() {
             </nav>
           </div>
 
-          {/* Desktop Actions */}
           <div className="ml-auto hidden items-center gap-3 md:flex">
-            {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
@@ -148,34 +214,19 @@ export default function Navbar() {
               />
             </button>
 
-            {/* Contact Button */}
-            <a
-              href="#contact"
-              className="
-                inline-flex
-                items-center
-                justify-center
-                gap-2
-                rounded-(--btn-radius)
-                bg-(--color-primary)
-                px-4
-                py-2
-                text-sm
-                font-semibold
-                text-white
-                transition-colors
-                duration-200
-                hover:bg-(--color-primary-hover)
-              "
+            <MouseTrackingButton
+              onClick={() => navigate("login")}
+              className="px-4 py-2 text-sm"
             >
-              Contact
-              <FiArrowRight size={15} />
-            </a>
+              Get Started
+              <FiArrowRight
+                size={15}
+                className="transition-transform duration-300 group-hover:translate-x-0.5"
+              />
+            </MouseTrackingButton>
           </div>
 
-          {/* Mobile Actions */}
           <div className="ml-auto flex items-center gap-2 md:hidden">
-            {/* Theme Toggle (Mobile) */}
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
@@ -244,11 +295,25 @@ export default function Navbar() {
               />
             </button>
 
-            {/* Hamburger Menu */}
+            <div
+              className={`transition-all duration-300 ease-in-out overflow-hidden ${isShrunk ? "max-w-25 opacity-100 ml-1" : "max-w-0 opacity-0"}`}
+            >
+              <MouseTrackingButton
+                onClick={() => navigate("login")}
+                className="px-3 py-1.5 text-xs gap-1"
+              >
+                Start
+                <FiArrowRight
+                  size={12}
+                  className="transition-transform duration-300 group-hover:translate-x-0.5"
+                />
+              </MouseTrackingButton>
+            </div>
+
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-              className="
+              className={`
                 flex
                 h-9
                 w-9
@@ -256,10 +321,14 @@ export default function Navbar() {
                 justify-center
                 rounded-full
                 text-(--color-text-muted)
-                transition-colors
+                transition-all
+                duration-300
+                ease-in-out
+                overflow-hidden
                 hover:bg-(--color-surface-strong)
                 hover:text-(--color-text)
-              "
+                ${isShrunk ? "max-w-0 opacity-0" : "max-w-9 opacity-100"}
+              `}
               aria-label={
                 isMobileMenuOpen
                   ? "Close navigation menu"
@@ -272,8 +341,7 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile Dropdown Menu */}
-        {isMobileMenuOpen && (
+        {isMobileMenuOpen && !isShrunk && (
           <div
             className="
               mt-2
@@ -308,29 +376,16 @@ export default function Navbar() {
             </ul>
 
             <div className="mt-4 border-t border-(--color-border) pt-4">
-              <a
-                href="#contact"
-                className="
-                  inline-flex
-                  w-full
-                  items-center
-                  justify-center
-                  gap-2
-                  rounded-(--btn-radius)
-                  bg-(--color-primary)
-                  px-4
-                  py-2.5
-                  text-sm
-                  font-semibold
-                  text-white
-                  transition-colors
-                  duration-200
-                  hover:bg-(--color-primary-hover)
-                "
+              <MouseTrackingButton
+                onClick={() => navigate("login")}
+                className="w-full px-4 py-2.5 text-sm"
               >
-                Contact
-                <FiArrowRight size={15} />
-              </a>
+                Get Started
+                <FiArrowRight
+                  size={15}
+                  className="transition-transform duration-300 group-hover:translate-x-0.5"
+                />
+              </MouseTrackingButton>
             </div>
           </div>
         )}
