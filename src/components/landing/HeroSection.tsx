@@ -83,7 +83,7 @@ export default function HeroSection() {
             to="/login"
             className="w-full sm:w-auto flex items-center justify-center gap-2 bg-(--color-primary) hover:bg-(--color-primary-hover) text-white font-semibold rounded-lg py-4 px-8 transition-colors shadow-lg shadow-(--color-primary)/20 text-base"
           >
-            Open App <FiArrowRight size={18} />
+            Get Started <FiArrowRight size={18} />
           </Link>
           <a
             href="#features"
