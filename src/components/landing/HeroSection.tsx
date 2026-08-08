@@ -98,7 +98,7 @@ export default function HeroSection() {
       <div className="floating-card left-card hidden lg:block absolute top-[12%] left-[5%] w-48 -rotate-6 z-10">
         <div className="bg-(--color-surface)/90 backdrop-blur-sm border border-(--color-border) rounded-2xl p-1.5 shadow-2xl">
           <img
-            src="https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?q=80&w=600&auto=format&fit=crop"
+            src="/image-1.png"
             alt="Wallet App"
             className="rounded-xl w-full h-auto object-cover aspect-4/3"
           />
@@ -108,7 +108,7 @@ export default function HeroSection() {
       <div className="floating-card left-card hidden lg:block absolute top-[33%] left-[1%] w-64 rotate-3 z-30">
         <div className="bg-(--color-surface)/90 backdrop-blur-sm border border-(--color-border) rounded-2xl p-1.5 shadow-2xl">
           <img
-            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=600&auto=format&fit=crop"
+            src="/image-2.png"
             alt="Analytics Dashboard"
             className="rounded-xl w-full h-auto object-cover aspect-4/3"
           />
@@ -118,7 +118,7 @@ export default function HeroSection() {
       <div className="floating-card left-card hidden lg:block absolute bottom-[24%] left-[8%] w-44 -rotate-12 z-10">
         <div className="bg-(--color-surface)/90 backdrop-blur-sm border border-(--color-border) rounded-2xl p-1.5 shadow-2xl">
           <img
-            src="https://images.unsplash.com/photo-1563013544-824ae1b704d3?q=80&w=600&auto=format&fit=crop"
+            src="/image-3.png"
             alt="Mobile Payment"
             className="rounded-xl w-full h-auto object-cover aspect-4/3"
           />
@@ -129,7 +129,7 @@ export default function HeroSection() {
       <div className="floating-card right-card hidden lg:block absolute top-[12%] right-[5%] w-48 rotate-6 z-10">
         <div className="bg-(--color-surface)/90 backdrop-blur-sm border border-(--color-border) rounded-2xl p-1.5 shadow-2xl">
           <img
-            src="https://images.unsplash.com/photo-1543286386-713bdd548da4?q=80&w=600&auto=format&fit=crop"
+            src="/image-4.png"
             alt="Finance Chart"
             className="rounded-xl w-full h-auto object-cover aspect-4/3"
           />
@@ -139,7 +139,7 @@ export default function HeroSection() {
       <div className="floating-card right-card hidden lg:block absolute top-[33%] right-[1%] w-64 -rotate-3 z-30">
         <div className="bg-(--color-surface)/90 backdrop-blur-sm border border-(--color-border) rounded-2xl p-1.5 shadow-2xl">
           <img
-            src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=600&auto=format&fit=crop"
+            src="/image-5.png"
             alt="Expense Calculator"
             className="rounded-xl w-full h-auto object-cover aspect-4/3"
           />
@@ -149,7 +149,7 @@ export default function HeroSection() {
       <div className="floating-card right-card hidden lg:block absolute bottom-[24%] right-[8%] w-44 rotate-12 z-10">
         <div className="bg-(--color-surface)/90 backdrop-blur-sm border border-(--color-border) rounded-2xl p-1.5 shadow-2xl">
           <img
-            src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=600&auto=format&fit=crop"
+            src="/image-6.png"
             alt="Transaction History"
             className="rounded-xl w-full h-auto object-cover aspect-4/3"
           />
@@ -159,23 +159,23 @@ export default function HeroSection() {
       {/* Social Proof / Trusted By */}
       <div className="relative z-20 mt-32 w-full max-w-4xl mx-auto text-center">
         <p className="text-xs font-medium uppercase tracking-widest text-(--color-text-soft) mb-8">
-          Trusted by fast-growing teams worldwide
+          Perfect for managing shared finances for
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-4 opacity-40">
+        <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-4 opacity-50">
           <span className="text-xl font-bold text-(--color-text-muted)">
-            Vercel
+            Roommates
           </span>
           <span className="text-xl font-bold text-(--color-text-muted)">
-            Supabase
+            Travel Groups
           </span>
           <span className="text-xl font-bold text-(--color-text-muted)">
-            Linear
+            Couples
           </span>
           <span className="text-xl font-bold text-(--color-text-muted)">
-            Notion
+            Project Teams
           </span>
           <span className="text-xl font-bold text-(--color-text-muted)">
-            Figma
+            Friends
           </span>
         </div>
       </div>
