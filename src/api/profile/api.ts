@@ -38,8 +38,8 @@ export const profileAPI = {
     const formData = new FormData();
     formData.append("avatar", file);
 
-    const response = await fetch(`${BASE_URL}/api/users/avatar`, {
-      method: "PUT",
+    const response = await fetch(`${BASE_URL}/api/users/profile/avatar`, {
+      method: "PATCH",
       credentials: "include",
       body: formData,
     });
