@@ -3,46 +3,10 @@ import { Link } from "react-router-dom";
 import { FiArrowRight, FiLoader, FiPlus, FiUsers } from "react-icons/fi";
 import AddGroupModal from "../modals/AddGroupModal";
 import { useGroup } from "../context/groups/GroupsContext";
-import useAuth from "../hooks/useAuth";
-import type { Balance } from "../types/expence";
-import type { Group } from "../types/groups";
-
-type GroupWithBalanceSummary = Group & {
-  balances?: Balance[];
-  userBalance?: Pick<Balance, "toReceive" | "toPay">;
-};
-
-const formatINR = (value: number) =>
-  `₹${value.toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
 
 export default function Groups() {
   const { groups, isLoadingGroups } = useGroup();
-  const { user } = useAuth();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-
-  const getBalanceSummary = (group: GroupWithBalanceSummary) => {
-    const balance =
-      group.userBalance ??
-      group.balances?.find((item) => item.user._id === user?._id);
-
-    if (!balance) return "Balance details available inside";
-    if (balance.toReceive > 0) {
-      return `${formatINR(balance.toReceive)} to receive`;
-    }
-    if (balance.toPay > 0) {
-      return `${formatINR(balance.toPay)} to pay`;
-    }
-    return "Settled up";
-  };
-
-  const getBalanceTone = (summary: string) => {
-    if (summary.includes("to receive")) return "text-(--color-success)";
-    if (summary.includes("to pay")) return "text-(--color-danger)";
-    return "text-(--color-text-muted)";
-  };
 
   return (
     <>
@@ -61,8 +25,7 @@ export default function Groups() {
             onClick={() => setIsCreateOpen(true)}
             className="flex items-center justify-center gap-2 px-4 py-2.5 bg-(--color-primary) hover:bg-(--color-primary-hover) text-white text-sm font-semibold rounded-(--btn-radius) transition-colors shadow-sm"
           >
-            <FiPlus size={16} />
-            Create Group
+            <FiPlus size={16} /> Create Group
           </button>
         </div>
 
@@ -74,7 +37,7 @@ export default function Groups() {
             />
           </div>
         ) : groups.length === 0 ? (
-          <div className="flex min-h-[30rem] flex-col items-center justify-center text-center py-20 px-6 bg-(--color-surface) border border-dashed border-(--color-border-strong) rounded-(--btn-radius) shadow-sm">
+          <div className="flex min-h-120 flex-col items-center justify-center text-center py-20 px-6 bg-(--color-surface) border border-dashed border-(--color-border-strong) rounded-(--btn-radius) shadow-sm">
             <div className="w-18 h-18 flex items-center justify-center rounded-full bg-(--color-primary-soft) mb-5">
               <FiUsers size={28} className="text-(--color-primary)" />
             </div>
@@ -90,16 +53,12 @@ export default function Groups() {
               onClick={() => setIsCreateOpen(true)}
               className="mt-6 flex items-center justify-center gap-2 px-4 py-2.5 bg-(--color-primary) hover:bg-(--color-primary-hover) text-white text-sm font-semibold rounded-(--btn-radius) transition-colors shadow-sm"
             >
-              <FiPlus size={16} />
-              Create Group
+              <FiPlus size={16} /> Create Group
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {(groups as GroupWithBalanceSummary[]).map((group) => {
-              const balanceSummary = getBalanceSummary(group);
-
-              return (
+            {groups.map((group) => (
               <Link
                 key={group._id}
                 to={`/dashboard/groups/${group._id}`}
@@ -153,20 +112,15 @@ export default function Groups() {
                   </div>
                   <div className="min-w-0 text-right">
                     <p className="text-[11px] font-semibold uppercase text-(--color-text-soft)">
-                      Your balance
+                      Balances
                     </p>
-                    <p
-                      className={`mt-1 truncate text-sm font-bold ${getBalanceTone(
-                        balanceSummary,
-                      )}`}
-                    >
-                      {balanceSummary}
+                    <p className="mt-1 truncate text-sm font-bold text-(--color-text-muted)">
+                      View details
                     </p>
                   </div>
                 </div>
               </Link>
-              );
-            })}
+            ))}
           </div>
         )}
       </section>

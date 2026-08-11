@@ -26,7 +26,7 @@ export type GroupsResponse = {
 export const groupsAPI = {
   async searchMembers(query: string): Promise<User[]> {
     const response = await fetch(
-      `${BASE_URL}/api/members/search?q=${encodeURIComponent(query)}`,
+      `${BASE_URL}/api/users/search?query=${encodeURIComponent(query)}`,
       {
         method: "GET",
         credentials: "include",
@@ -45,7 +45,8 @@ export const groupsAPI = {
   },
 
   async getUsers(): Promise<User[]> {
-    const response = await fetch(`${BASE_URL}/api/members/search?q=`, {
+    // Backend route GET /api/users gets all users
+    const response = await fetch(`${BASE_URL}/api/users`, {
       method: "GET",
       credentials: "include",
     });
@@ -85,6 +86,7 @@ export const groupsAPI = {
 
     return data.group;
   },
+
   async getGroups(): Promise<Group[]> {
     const response = await fetch(`${BASE_URL}/api/groups`, {
       method: "GET",
@@ -96,5 +98,20 @@ export const groupsAPI = {
     };
     if (!response.ok) throw new Error(data.message || "Failed to fetch groups");
     return data.groups ?? [];
+  },
+
+  async getGroupById(groupId: string): Promise<Group> {
+    const response = await fetch(`${BASE_URL}/api/groups/${groupId}`, {
+      method: "GET",
+      credentials: "include",
+    });
+
+    const data = (await response.json()) as Partial<CreateGroupResponse> & {
+      message?: string;
+    };
+
+    if (!response.ok) throw new Error(data.message || "Failed to fetch group");
+    if (!data.group) throw new Error("Group not found");
+    return data.group;
   },
 };

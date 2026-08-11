@@ -8,9 +8,12 @@ import {
   FiLoader,
   FiPlus,
   FiUsers,
+  FiCheckCircle,
 } from "react-icons/fi";
 import { expenseAPI } from "../api/expense/api";
+import { groupsAPI } from "../api/groups/api";
 import AddExpenseModal from "../modals/AddExpenseModal";
+import SettleUpModal from "../modals/SettleUpModal";
 import useAuth from "../hooks/useAuth";
 import type { Balance, Expense } from "../types/expence";
 import type { Group } from "../types/groups";
@@ -24,6 +27,7 @@ export default function GroupDetails() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [isSettleUpOpen, setIsSettleUpOpen] = useState(false);
 
   const fetchGroupDetails = useCallback(async () => {
     if (!groupId) return;
@@ -32,10 +36,15 @@ export default function GroupDetails() {
     setError(null);
 
     try {
-      const data = await expenseAPI.getGroupExpenses(groupId);
-      setGroup(data.group);
-      setExpenses(data.expenses);
-      setBalances(data.balances);
+      // Fetch Group info, Expenses, and Balances in parallel
+      const [groupData, expenseData] = await Promise.all([
+        groupsAPI.getGroupById(groupId),
+        expenseAPI.getGroupExpenses(groupId),
+      ]);
+
+      setGroup(groupData);
+      setExpenses(expenseData.expenses);
+      setBalances(expenseData.balances);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to load group details",
@@ -50,15 +59,12 @@ export default function GroupDetails() {
   }, [fetchGroupDetails]);
 
   const currentUserBalance = useMemo(
-    () => balances.find((balance) => balance.user._id === user?._id),
+    () => balances.find((b) => b.user._id === user?._id),
     [balances, user?._id],
   );
 
   const formatINR = (val: number) =>
-    `₹${val.toLocaleString("en-IN", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
+    `₹${val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const formatDate = (isoString?: string) =>
     isoString
@@ -72,19 +78,13 @@ export default function GroupDetails() {
   const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   const renderUserSummary = () => {
-    if (!currentUserBalance) {
+    if (!currentUserBalance || currentUserBalance.balance === 0) {
       return "You are settled up";
     }
-
-    if (currentUserBalance.toReceive > 0) {
-      return `You have ${formatINR(currentUserBalance.toReceive)} to receive`;
+    if (currentUserBalance.balance > 0) {
+      return `You have ${formatINR(currentUserBalance.balance)} to receive`;
     }
-
-    if (currentUserBalance.toPay > 0) {
-      return `You have ${formatINR(currentUserBalance.toPay)} to pay`;
-    }
-
-    return "You are settled up";
+    return `You have ${formatINR(Math.abs(currentUserBalance.balance))} to pay`;
   };
 
   return (
@@ -93,8 +93,7 @@ export default function GroupDetails() {
         to="/dashboard/groups"
         className="inline-flex items-center gap-2 text-sm text-(--color-text-muted) hover:text-(--color-primary) transition-colors w-fit"
       >
-        <FiArrowLeft size={16} />
-        Groups
+        <FiArrowLeft size={16} /> Groups
       </Link>
 
       {isLoading ? (
@@ -103,8 +102,7 @@ export default function GroupDetails() {
         </div>
       ) : error ? (
         <div className="flex items-center gap-3 text-sm text-(--color-danger) bg-(--color-danger)/10 p-4 rounded-(--btn-radius) border border-(--color-danger)/30">
-          <FiAlertCircle size={20} className="shrink-0" />
-          <p>{error}</p>
+          <FiAlertCircle size={20} className="shrink-0" /> <p>{error}</p>
         </div>
       ) : group ? (
         <>
@@ -112,7 +110,7 @@ export default function GroupDetails() {
             <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-(--color-primary-soft) text-(--color-primary) rounded-(--btn-radius)">
-                <FiUsers size={28} />
+                  <FiUsers size={28} />
                 </div>
                 <div>
                   <h1 className="text-3xl md:text-4xl font-extrabold text-(--color-text)">
@@ -126,14 +124,22 @@ export default function GroupDetails() {
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setIsAddExpenseOpen(true)}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-(--color-primary) hover:bg-(--color-primary-hover) text-white text-sm font-semibold rounded-(--btn-radius) transition-colors shadow-sm"
-              >
-                <FiPlus size={16} />
-                Add Expense
-              </button>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsSettleUpOpen(true)}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-(--color-success) hover:bg-(--color-success-hover) text-white text-sm font-semibold rounded-(--btn-radius) transition-colors shadow-sm"
+                >
+                  <FiCheckCircle size={16} /> Settle Up
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAddExpenseOpen(true)}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-(--color-primary) hover:bg-(--color-primary-hover) text-white text-sm font-semibold rounded-(--btn-radius) transition-colors shadow-sm"
+                >
+                  <FiPlus size={16} /> Add Expense
+                </button>
+              </div>
             </div>
 
             <div className="mt-5 flex flex-wrap gap-2">
@@ -164,9 +170,9 @@ export default function GroupDetails() {
 
           <div
             className={`bg-(--color-surface) border rounded-(--btn-radius) p-6 shadow-sm ${
-              currentUserBalance?.toReceive
+              currentUserBalance && currentUserBalance.balance > 0
                 ? "border-(--color-success)/40"
-                : currentUserBalance?.toPay
+                : currentUserBalance && currentUserBalance.balance < 0
                   ? "border-(--color-danger)/40"
                   : "border-(--color-border)"
             }`}
@@ -176,9 +182,9 @@ export default function GroupDetails() {
             </p>
             <p
               className={`mt-3 text-2xl font-extrabold md:text-3xl ${
-                currentUserBalance?.toReceive
+                currentUserBalance && currentUserBalance.balance > 0
                   ? "text-(--color-success)"
-                  : currentUserBalance?.toPay
+                  : currentUserBalance && currentUserBalance.balance < 0
                     ? "text-(--color-danger)"
                     : "text-(--color-text)"
               }`}
@@ -204,8 +210,7 @@ export default function GroupDetails() {
                 onClick={() => setIsAddExpenseOpen(true)}
                 className="mt-6 flex items-center justify-center gap-2 px-4 py-2.5 bg-(--color-primary) hover:bg-(--color-primary-hover) text-white text-sm font-semibold rounded-(--btn-radius) transition-colors shadow-sm"
               >
-                <FiPlus size={16} />
-                Add Expense
+                <FiPlus size={16} /> Add Expense
               </button>
             </div>
           ) : (
@@ -241,8 +246,7 @@ export default function GroupDetails() {
                     {expense.paidBy.fullName}
                   </p>
                   <p className="md:col-span-2 text-sm text-(--color-text-muted) flex items-center gap-1">
-                    <FiCalendar size={13} />
-                    {formatDate(expense.createdAt)}
+                    <FiCalendar size={13} /> {formatDate(expense.createdAt)}
                   </p>
                 </div>
               ))}
@@ -267,13 +271,13 @@ export default function GroupDetails() {
                       {balance.user.email}
                     </p>
                   </div>
-                  {balance.toReceive > 0 ? (
+                  {balance.balance > 0 ? (
                     <p className="text-sm font-semibold text-(--color-success) whitespace-nowrap">
-                      {formatINR(balance.toReceive)} to receive
+                      {formatINR(balance.balance)} to receive
                     </p>
-                  ) : balance.toPay > 0 ? (
+                  ) : balance.balance < 0 ? (
                     <p className="text-sm font-semibold text-(--color-danger) whitespace-nowrap">
-                      {formatINR(balance.toPay)} to pay
+                      {formatINR(Math.abs(balance.balance))} to pay
                     </p>
                   ) : (
                     <p className="text-sm font-semibold text-(--color-text-muted) whitespace-nowrap">
@@ -290,6 +294,13 @@ export default function GroupDetails() {
             onClose={() => setIsAddExpenseOpen(false)}
             group={group}
             onCreated={fetchGroupDetails}
+          />
+          <SettleUpModal
+            isOpen={isSettleUpOpen}
+            onClose={() => setIsSettleUpOpen(false)}
+            groupId={group._id}
+            balances={balances}
+            onSettled={fetchGroupDetails}
           />
         </>
       ) : null}

@@ -1,11 +1,10 @@
-import { useEffect, useState, useCallback, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { ExpenseContext } from "./ExpenseContext";
 import type {
   Expense,
   Balance,
   CreateExpensePayload,
 } from "../../types/expence";
-import useAuth from "../../hooks/useAuth";
 import { expenseAPI } from "../../api/expense/api";
 
 type ExpenseProviderProps = {
@@ -13,32 +12,14 @@ type ExpenseProviderProps = {
 };
 
 export function ExpenseProvider({ children }: ExpenseProviderProps) {
-  const { user } = useAuth();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [balances, setBalances] = useState<Balance[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const fetchExpenses = useCallback(async () => {
-    if (!user) return;
-    try {
-      const data = await expenseAPI.getExpenses();
-      setExpenses(data.expenses);
-      setBalances(data.balances);
-    } catch (error) {
-      console.error("Failed to fetch expenses:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    void Promise.resolve().then(fetchExpenses);
-  }, [fetchExpenses]);
-
-  // Updated to accept the new payload structure
   const addExpense = async (payload: CreateExpensePayload) => {
     await expenseAPI.createExpense(payload);
-    await fetchExpenses(); // Re-fetch to update the list and balances
+    // The component calling this should re-fetch the group expenses
+    // to update the list and balances.
   };
 
   return (

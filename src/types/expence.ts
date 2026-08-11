@@ -8,29 +8,28 @@ export type UserRef = {
 export type Participant = {
   user: UserRef;
   amount: number;
-  percentage: number;
   paid: boolean;
 };
 
 export type Expense = {
   _id: string;
   title: string;
-  description: string;
+  description?: string;
   amount: number;
-  currency: string;
   paidBy: UserRef;
   group: string;
   participants: Participant[];
-  splitType: string;
+  splitType: "equal" | "percentage" | "exact";
   createdAt: string;
+  updatedAt: string;
 };
 
+// Backend returns: { user, paid, owes, balance }
 export type Balance = {
   user: UserRef;
-  totalPaid: number;
-  totalShare: number;
-  toReceive: number;
-  toPay: number;
+  paid: number;
+  owes: number;
+  balance: number; // > 0 means to receive, < 0 means to pay
 };
 
 export type CreateExpensePayload = {
@@ -39,12 +38,12 @@ export type CreateExpensePayload = {
   amount: number;
   groupId: string;
   paidBy: string;
-  participantIds: string[];
+  splitType: "equal" | "percentage" | "exact";
+  participants: { user: string }[];
 };
 
 export type GroupExpensesResponse = {
-  success: true;
-  group: import("./groups").Group;
+  success: boolean;
   expenses: Expense[];
   balances: Balance[];
 };

@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { FiAlertCircle, FiCheck, FiCreditCard, FiLoader, FiX } from "react-icons/fi";
+import {
+  FiAlertCircle,
+  FiCheck,
+  FiCreditCard,
+  FiLoader,
+  FiX,
+} from "react-icons/fi";
 import { expenseAPI } from "../api/expense/api";
 import type { Group } from "../types/groups";
 
@@ -80,13 +86,17 @@ export default function AddExpenseModal({
     setApiError(null);
 
     try {
+      // Map participantIds to the array of objects the backend expects
+      const participantsPayload = participantIds.map((id) => ({ user: id }));
+
       await expenseAPI.createExpense({
         title: title.trim(),
         description: description.trim(),
         amount: Number(amount),
         groupId: group._id,
         paidBy,
-        participantIds,
+        splitType: "equal", // Hardcoded to equal based on current UI
+        participants: participantsPayload,
       });
       await onCreated();
       onClose();
