@@ -11,20 +11,27 @@ import {
   FiCheckCircle,
 } from "react-icons/fi";
 import { expenseAPI } from "../api/expense/api";
-import { groupsAPI } from "../api/groups/api";
 import AddExpenseModal from "../modals/AddExpenseModal";
 import SettleUpModal from "../modals/SettleUpModal";
 import useAuth from "../hooks/useAuth";
+import { useGroup } from "../context/groups/GroupsContext"; // Import the context hook
 import type { Balance, Expense } from "../types/expence";
-import type { Group } from "../types/groups";
+
 
 export default function GroupDetails() {
   const { groupId } = useParams<{ groupId: string }>();
   const { user } = useAuth();
-  const [group, setGroup] = useState<Group | null>(null);
+  const { groups, isLoadingGroups } = useGroup();
+
+  // Find the group from the context instead of making an API call
+  const group = useMemo(
+    () => groups.find((g) => g._id === groupId),
+    [groups, groupId]
+  );
+
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [balances, setBalances] = useState<Balance[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingExpenses, setIsLoadingExpenses] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isSettleUpOpen, setIsSettleUpOpen] = useState(false);
@@ -32,17 +39,13 @@ export default function GroupDetails() {
   const fetchGroupDetails = useCallback(async () => {
     if (!groupId) return;
 
-    setIsLoading(true);
+    setIsLoadingExpenses(true);
     setError(null);
 
     try {
-      // Fetch Group info, Expenses, and Balances in parallel
-      const [groupData, expenseData] = await Promise.all([
-        groupsAPI.getGroupById(groupId),
-        expenseAPI.getGroupExpenses(groupId),
-      ]);
+      // We only need to fetch expenses and balances, group data comes from context
+      const expenseData = await expenseAPI.getGroupExpenses(groupId);
 
-      setGroup(groupData);
       setExpenses(expenseData.expenses);
       setBalances(expenseData.balances);
     } catch (err) {
@@ -50,13 +53,15 @@ export default function GroupDetails() {
         err instanceof Error ? err.message : "Failed to load group details",
       );
     } finally {
-      setIsLoading(false);
+      setIsLoadingExpenses(false);
     }
   }, [groupId]);
 
   useEffect(() => {
-    void Promise.resolve().then(fetchGroupDetails);
-  }, [fetchGroupDetails]);
+    if (group) {
+      void Promise.resolve().then(fetchGroupDetails);
+    }
+  }, [fetchGroupDetails, group]);
 
   const currentUserBalance = useMemo(
     () => balances.find((b) => b.user._id === user?._id),
@@ -96,7 +101,7 @@ export default function GroupDetails() {
         <FiArrowLeft size={16} /> Groups
       </Link>
 
-      {isLoading ? (
+      {isLoadingGroups || isLoadingExpenses ? (
         <div className="flex items-center justify-center py-28 bg-(--color-surface) border border-(--color-border) rounded-(--btn-radius) shadow-sm">
           <FiLoader className="animate-spin text-(--color-primary)" size={32} />
         </div>
@@ -104,7 +109,11 @@ export default function GroupDetails() {
         <div className="flex items-center gap-3 text-sm text-(--color-danger) bg-(--color-danger)/10 p-4 rounded-(--btn-radius) border border-(--color-danger)/30">
           <FiAlertCircle size={20} className="shrink-0" /> <p>{error}</p>
         </div>
-      ) : group ? (
+      ) : !group ? (
+        <div className="flex items-center gap-3 text-sm text-(--color-danger) bg-(--color-danger)/10 p-4 rounded-(--btn-radius) border border-(--color-danger)/30">
+          <FiAlertCircle size={20} className="shrink-0" /> <p>Group not found. It may have been deleted or you don't have access.</p>
+        </div>
+      ) : (
         <>
           <div className="rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface) p-5 shadow-sm md:p-6">
             <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
@@ -303,7 +312,7 @@ export default function GroupDetails() {
             onSettled={fetchGroupDetails}
           />
         </>
-      ) : null}
+      )}
     </section>
   );
 }

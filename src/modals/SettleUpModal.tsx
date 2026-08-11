@@ -30,6 +30,7 @@ export default function SettleUpModal({
   const usersToPay = balances.filter(
     (b) => b.user._id === user?._id && b.balance < 0,
   );
+  console.log(usersToPay)
 
   useEffect(() => {
     if (isOpen) {

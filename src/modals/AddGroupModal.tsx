@@ -94,7 +94,7 @@ export default function AddGroupModal({ isOpen, onClose }: AddGroupModalProps) {
     try {
       await createGroup({
         name: groupName.trim(),
-        memberIds: selectedMembers.map((m) => m._id),
+        members: selectedMembers.map((m) => m._id),
       });
       handleClose();
     } catch (error) {

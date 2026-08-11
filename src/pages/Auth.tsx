@@ -60,7 +60,7 @@ export default function AuthPage() {
       if (!data.fullName) return;
       const success = await register(data.fullName, data.email, data.password);
       if (success) {
-        // Navigate to verify-email page and pass the email along
+       
         navigate("/verify-email", { state: { email: data.email } });
       }
     }
