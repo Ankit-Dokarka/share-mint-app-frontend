@@ -4,6 +4,12 @@ import type { User } from "../../types/user";
 type AuthContextType = {
   user: User | null;
   googleLogin: (idToken: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<boolean>;
+  register: (
+    fullName: string,
+    email: string,
+    password: string,
+  ) => Promise<boolean>;
   logout: () => Promise<void>;
   isLoading: boolean;
   error: string;

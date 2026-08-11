@@ -1,33 +1,48 @@
 import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { FiShield, FiLoader } from "react-icons/fi";
+import { useNavigate, useLocation } from "react-router-dom";
+import { FiShield, FiLoader, FiCheckCircle } from "react-icons/fi";
+import { authAPI } from "../api/auth/api";
+import { getFriendlyError } from "../utils/getFriendlyError";
 
 type OTPForm = {
   otp: string[];
 };
 
 export default function VerifyEmail() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get email passed from the Register page
+  const email = location.state?.email || "";
+
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const { handleSubmit, setValue, watch } = useForm<OTPForm>({
-    defaultValues: {
-      otp: ["", "", "", "", "", ""],
-    },
+    defaultValues: { otp: ["", "", "", "", "", ""] },
   });
 
   const otpValues = watch("otp");
 
   useEffect(() => {
+    // If user navigates here directly without email, send them back to login
+    if (!email) {
+      navigate("/login");
+      return;
+    }
     inputRefs.current[0]?.focus();
-  }, []);
+  }, [email, navigate]);
 
   const handleChange = (
     index: number,
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     if (error) setError("");
+    if (successMsg) setSuccessMsg("");
 
     const value = e.target.value.replace(/\D/g, "");
 
@@ -38,7 +53,6 @@ export default function VerifyEmail() {
         newOtp[i] = digit;
       });
       setValue("otp", newOtp);
-
       const nextIndex = Math.min(pastedDigits.length, 5);
       inputRefs.current[nextIndex]?.focus();
       return;
@@ -59,7 +73,7 @@ export default function VerifyEmail() {
     }
   };
 
-  const onSubmit = (data: OTPForm) => {
+  const onSubmit = async (data: OTPForm) => {
     const finalOtp = data.otp.join("");
 
     if (finalOtp.length !== 6) {
@@ -70,29 +84,46 @@ export default function VerifyEmail() {
     setIsVerifying(true);
     setError("");
 
-    setTimeout(() => {
+    try {
+      const response = await authAPI.verifyEmail(email, finalOtp);
+      setSuccessMsg(response.message + " Redirecting to login...");
+
+      // Wait 2 seconds then redirect to login
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    } catch (err) {
+      setError(getFriendlyError(err));
+      setValue("otp", ["", "", "", "", "", ""]);
+      inputRefs.current[0]?.focus();
+    } finally {
       setIsVerifying(false);
-      if (finalOtp === "123456") {
-        window.location.href = "/dashboard";
-      } else {
-        setError("Invalid OTP. Please try again.");
-        setValue("otp", ["", "", "", "", "", ""]);
-        inputRefs.current[0]?.focus();
-      }
-    }, 1500);
+    }
+  };
+
+  const handleResend = async () => {
+    setIsResending(true);
+    setError("");
+    setSuccessMsg("");
+
+    try {
+      const response = await authAPI.resendOTP(email);
+      setSuccessMsg(response.message);
+    } catch (err) {
+      setError(getFriendlyError(err));
+    } finally {
+      setIsResending(false);
+    }
   };
 
   const isComplete = otpValues.every((d) => d !== "");
 
   return (
     <div className="relative flex min-h-dvh w-full items-center justify-center bg-(--color-bg) p-4 overflow-hidden">
-      {/* Decorative Background Blobs */}
       <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-(--color-primary)/20 rounded-full blur-3xl"></div>
       <div className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-(--color-success)/10 rounded-full blur-3xl"></div>
 
-      {/* Main Card */}
       <div className="relative w-full max-w-md bg-(--color-surface)/80 backdrop-blur-xl border border-(--color-border) shadow-2xl rounded-2xl p-8 md:p-10 flex flex-col gap-8 z-10">
-        {/* Header Section */}
         <div className="text-center flex flex-col gap-4">
           <div className="mx-auto w-16 h-16 flex items-center justify-center rounded-2xl bg-(--color-primary) shadow-lg shadow-(--color-primary)/30 mb-2">
             <FiShield className="text-white" size={28} />
@@ -102,15 +133,15 @@ export default function VerifyEmail() {
               Verify Your Email
             </h1>
             <p className="text-sm text-(--color-text-muted) font-medium max-w-xs mx-auto">
-              We've sent a 6-digit code to your email. Please enter it below.
+              We've sent a 6-digit code to{" "}
+              <span className="font-bold text-(--color-text)">{email}</span>.
+              Please enter it below.
             </p>
           </div>
         </div>
 
-        {/* Form Section */}
         <form className="flex flex-col gap-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="flex flex-col gap-4">
-            {/* OTP Inputs */}
             <div className="flex justify-between gap-2 md:gap-3">
               {otpValues.map((digit, index) => (
                 <input
@@ -133,13 +164,19 @@ export default function VerifyEmail() {
               ))}
             </div>
 
-            {/* Error Message */}
-            <p className="text-(--color-danger) text-xs font-medium min-h-4 text-center">
-              {error}
-            </p>
+            {/* Error or Success Message */}
+            {error && (
+              <p className="text-(--color-danger) text-xs font-medium min-h-4 text-center flex items-center justify-center gap-1.5">
+                <FiShield className="text-danger" size={12} /> {error}
+              </p>
+            )}
+            {successMsg && (
+              <p className="text-(--color-success) text-xs font-medium min-h-4 text-center flex items-center justify-center gap-1.5">
+                <FiCheckCircle size={12} /> {successMsg}
+              </p>
+            )}
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             disabled={!isComplete || isVerifying}
@@ -155,14 +192,19 @@ export default function VerifyEmail() {
             )}
           </button>
 
-          {/* Resend Code Helper */}
           <div className="text-center text-sm text-(--color-text-muted)">
             Didn't receive the code?{" "}
             <button
               type="button"
-              className="font-semibold text-(--color-primary) hover:underline transition-colors"
+              onClick={handleResend}
+              disabled={isResending}
+              className="font-semibold text-(--color-primary) hover:underline transition-colors disabled:opacity-50 flex items-center gap-1 inline-flex"
             >
-              Resend
+              {isResending ? (
+                <FiLoader className="animate-spin" size={12} />
+              ) : (
+                "Resend"
+              )}
             </button>
           </div>
         </form>
