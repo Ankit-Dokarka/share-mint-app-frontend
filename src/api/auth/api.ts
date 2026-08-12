@@ -81,7 +81,7 @@ export const authAPI = {
   },
 
   async verifyEmail(email: string, otp: string) {
-    const response = await fetch(`${BASE_URL}/api/auth/verify-email`, {
+    const response = await fetch(`${BASE_URL}/api/auth/verify-otp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
