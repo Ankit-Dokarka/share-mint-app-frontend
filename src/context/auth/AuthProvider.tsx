@@ -57,7 +57,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  // --- NEW: Login ---
+ 
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
@@ -81,7 +81,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  // --- NEW: Register ---
+ 
   const register = async (
     fullName: string,
     email: string,

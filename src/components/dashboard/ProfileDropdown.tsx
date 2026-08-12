@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FiUser, FiSettings, FiLogOut, FiChevronDown } from "react-icons/fi";
-import useAuth from "../../hooks/useAuth";
+import useAuth from "../../context/auth/AuthContext";
 import { useNavigate } from "react-router-dom";
 import getName from "../../utils/getName";
 

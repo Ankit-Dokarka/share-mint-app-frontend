@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { FiArrowRight, FiCreditCard, FiPlus, FiUsers } from "react-icons/fi";
-import useAuth from "../hooks/useAuth";
+import useAuth from "../context/auth/AuthContext";
 import { useGroup } from "../context/groups/GroupsContext";
 
 export default function Dashboard() {

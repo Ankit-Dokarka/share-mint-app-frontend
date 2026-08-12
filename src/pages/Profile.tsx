@@ -9,7 +9,7 @@ import {
   FiCheckCircle,
   FiAlertCircle,
 } from "react-icons/fi";
-import useAuth from "../hooks/useAuth";
+import useAuth from "../context/auth/AuthContext";
 import getName from "../utils/getName";
 import { profileAPI } from "../api/profile/api";
 

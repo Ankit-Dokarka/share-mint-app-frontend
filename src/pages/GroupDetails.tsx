@@ -13,7 +13,7 @@ import {
 import { expenseAPI } from "../api/expense/api";
 import AddExpenseModal from "../modals/AddExpenseModal";
 import SettleUpModal from "../modals/SettleUpModal";
-import useAuth from "../hooks/useAuth";
+import useAuth from "../context/auth/AuthContext";
 import { useGroup } from "../context/groups/GroupsContext"; // Import the context hook
 import type { Balance, Expense } from "../types/expence";
 

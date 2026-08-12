@@ -5,7 +5,7 @@ import { FiLogOut } from "react-icons/fi";
 import Logo from "./Logo";
 import SidebarItem from "./SidebarItem";
 import { sidebarNavItems } from "../../constants/navigation";
-import useAuth from "../../hooks/useAuth";
+import useAuth from "../../context/auth/AuthContext";
 import getName from "../../utils/getName";
 
 export default function Sidebar() {

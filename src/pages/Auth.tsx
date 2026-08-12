@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
-import useAuth from "../hooks/useAuth";
+import useAuth from "../context/auth/AuthContext";
 import {
   FiCreditCard,
   FiAlertCircle,

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { FiX, FiAlertCircle, FiLoader, FiCheckCircle } from "react-icons/fi";
 import { settlementAPI } from "../api/settlement/api";
 import type { Balance } from "../types/expence";
-import useAuth from "../hooks/useAuth";
+import useAuth from "../context/auth/AuthContext";
 
 type SettleUpModalProps = {
   isOpen: boolean;
