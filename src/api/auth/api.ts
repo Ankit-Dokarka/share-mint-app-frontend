@@ -55,7 +55,7 @@ export const authAPI = {
     return data;
   },
 
-  // --- NEW: Email/Password Auth ---
+
   async register(fullName: string, email: string, password: string) {
     const response = await fetch(`${BASE_URL}/api/auth/register`, {
       method: "POST",

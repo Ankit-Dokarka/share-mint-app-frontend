@@ -11,7 +11,7 @@ type AuthContextType = {
     password: string,
   ) => Promise<boolean>;
   logout: () => Promise<void>;
-  isLoading: boolean;
+ 
   error: string;
   clearError: () => void;
 };

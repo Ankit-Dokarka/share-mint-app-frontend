@@ -9,7 +9,8 @@ type AuthProviderProps = { children: ReactNode };
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+ 
+  const [isInitializing, setIsInitializing] = useState(true); 
   const [error, setError] = useState("");
 
   const clearError = () => setError("");
@@ -31,7 +32,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } catch {
         setUser(null);
       } finally {
-        setIsLoading(false);
+        setIsInitializing(false);
       }
     };
     verifyAuth();
@@ -39,7 +40,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const googleLogin = async (idToken: string) => {
     try {
-      setIsLoading(true);
+    
       clearError();
       const response = await authAPI.googleLogin(idToken);
       setUser({
@@ -52,15 +53,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (err) {
       setError(getFriendlyError(err));
       return false;
-    } finally {
-      setIsLoading(false);
     }
   };
 
- 
   const login = async (email: string, password: string) => {
     try {
-      setIsLoading(true);
+      
       clearError();
       const response = await authAPI.login(email, password);
       if (response.success && response.user) {
@@ -72,31 +70,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
         });
         return true;
       }
+
+      if (response.message) {
+        setError(response.message);
+      }
       return false;
     } catch (err) {
       setError(getFriendlyError(err));
       return false;
-    } finally {
-      setIsLoading(false);
     }
   };
 
- 
   const register = async (
     fullName: string,
     email: string,
     password: string,
   ) => {
     try {
-      setIsLoading(true);
+      
       clearError();
       await authAPI.register(fullName, email, password);
       return true;
     } catch (err) {
       setError(getFriendlyError(err));
       return false;
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -110,7 +107,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  if (isLoading && !user) {
+  
+  if (isInitializing && !user) {
     return (
       <div className="h-dvh w-full bg-(--color-bg)">
         <Spinner size="lg" />
@@ -126,7 +124,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         login,
         register,
         logout,
-        isLoading,
         error,
         clearError,
       }}

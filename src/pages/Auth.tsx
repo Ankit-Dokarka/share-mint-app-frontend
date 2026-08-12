@@ -8,6 +8,8 @@ import {
   FiMail,
   FiLock,
   FiUser,
+  FiEye,
+  FiEyeOff,
 } from "react-icons/fi";
 import { useForm } from "react-hook-form";
 
@@ -23,11 +25,17 @@ export default function AuthPage() {
   const buttonWrapperRef = useRef<HTMLDivElement>(null);
   const [isButtonReady, setIsButtonReady] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
+  
+  
+  const [isLoading, setIsLoading] = useState(false);
+ 
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register: registerField,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm<FormData>();
 
   useEffect(() => {
@@ -52,18 +60,31 @@ export default function AuthPage() {
 
   const onSubmit = async (data: FormData) => {
     clearError();
-    if (isLogin) {
-      const success = await login(data.email, data.password);
-      if (success) navigate("/dashboard");
-    } else {
-      if (!data.fullName) return;
-      const success = await register(data.fullName, data.email, data.password);
-      if (success) {
-        navigate("/verify-email", {
-          state: { email: data.email, fromSignup: true },
-        });
+    setIsLoading(true); 
+    try {
+      if (isLogin) {
+        const success = await login(data.email, data.password);
+        if (success) navigate("/dashboard");
+      } else {
+        if (!data.fullName) return;
+        const success = await register(data.fullName, data.email, data.password);
+        if (success) {
+          navigate("/verify-email", {
+            state: { email: data.email, fromSignup: true },
+          });
+        }
       }
+    } finally {
+      setIsLoading(false); 
     }
+  };
+
+  const handleToggle = () => {
+    if (isLoading) return;
+    clearError();
+    reset();
+    setShowPassword(false); 
+    setIsLogin((prev) => !prev);
   };
 
   return (
@@ -125,6 +146,7 @@ export default function AuthPage() {
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="w-full flex flex-col gap-4"
+            noValidate
           >
             {!isLogin && (
               <div className="flex flex-col gap-1.5">
@@ -140,6 +162,10 @@ export default function AuthPage() {
                     type="text"
                     {...registerField("fullName", {
                       required: !isLogin ? "Full name is required" : false,
+                      minLength: {
+                        value: 6,
+                        message: "Full name must be at least 6 characters long",
+                      },
                     })}
                     placeholder="John Doe"
                     className="w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/30 focus:border-(--color-primary) transition-all"
@@ -164,7 +190,13 @@ export default function AuthPage() {
                 />
                 <input
                   type="email"
-                  {...registerField("email", { required: "Email is required" })}
+                  {...registerField("email", {
+                    required: "Email is required",
+                    pattern: {
+                      value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                      message: "Please enter a valid email address",
+                    },
+                  })}
                   placeholder="you@example.com"
                   className="w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/30 focus:border-(--color-primary) transition-all"
                 />
@@ -186,14 +218,39 @@ export default function AuthPage() {
                   size={16}
                 />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   {...registerField("password", {
                     required: "Password is required",
-                    minLength: { value: 6, message: "Min 6 characters" },
+                    validate: (value) => {
+                      if (value.length < 6) {
+                        return "Password must be at least 6 characters long";
+                      }
+                      if (!isLogin) {
+                        if (!/[A-Z]/.test(value)) {
+                          return "Must contain at least one uppercase letter";
+                        }
+                        if (!/\d/.test(value)) {
+                          return "Must contain at least one digit";
+                        }
+                        if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value)) {
+                          return "Must contain at least one symbol";
+                        }
+                      }
+                      return true;
+                    },
                   })}
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/30 focus:border-(--color-primary) transition-all"
+                  className="w-full pl-9 pr-9 py-2.5 text-sm rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/30 focus:border-(--color-primary) transition-all"
                 />
+                {/* Eye Toggle Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-(--color-text-muted) hover:text-(--color-text) transition-colors focus:outline-none"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                </button>
               </div>
               {errors.password && (
                 <p className="text-xs text-(--color-danger)">
@@ -204,9 +261,14 @@ export default function AuthPage() {
 
             <button
               type="submit"
-              className="w-full p-3 rounded-xl bg-(--color-primary) hover:bg-(--color-primary-hover) text-white font-semibold cursor-pointer transition-all duration-200 shadow-md hover:shadow-lg hover:shadow-(--color-primary)/30 active:scale-[0.98] mt-2"
+              disabled={isLoading}
+              className={`w-full p-3 rounded-xl bg-(--color-primary) text-white font-semibold transition-all duration-200 shadow-md mt-2 ${
+                isLoading
+                  ? "opacity-70 cursor-not-allowed"
+                  : "cursor-pointer hover:bg-(--color-primary-hover) hover:shadow-lg hover:shadow-(--color-primary)/30 active:scale-[0.98]"
+              }`}
             >
-              {isLogin ? "Sign In" : "Create Account"}
+              {isLoading ? "Please wait..." : isLogin ? "Log In" : "Sign Up"}
             </button>
           </form>
 
@@ -241,18 +303,20 @@ export default function AuthPage() {
             </div>
           </div>
 
-          {/* Toggle Login/Register */}
+         
           <p className="text-sm text-(--color-text-muted) text-center mt-2">
             {isLogin ? "Don't have an account? " : "Already have an account? "}
             <button
               type="button"
-              onClick={() => {
-                clearError();
-                setIsLogin(!isLogin);
-              }}
-              className="font-semibold text-(--color-primary) hover:underline transition-colors"
+              onClick={handleToggle}
+              disabled={isLoading}
+              className={`font-semibold transition-colors ${
+                isLoading
+                  ? "text-(--color-text-muted) cursor-not-allowed opacity-70"
+                  : "text-(--color-primary) hover:underline cursor-pointer"
+              }`}
             >
-              {isLogin ? "Sign up" : "Sign in"}
+              {isLogin ? "Sign up" : "Log in"}
             </button>
           </p>
         </div>
