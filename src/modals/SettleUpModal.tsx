@@ -28,9 +28,9 @@ export default function SettleUpModal({
 
   // Find users that the current user owes money to (balance < 0)
   const usersToPay = balances.filter(
-    (b) => b.user._id === user?._id && b.balance < 0,
+    (b) => b.balance > 0 && b.user._id !== user?._id,
   );
-  console.log(usersToPay)
+  console.log(usersToPay);
 
   useEffect(() => {
     if (isOpen) {
