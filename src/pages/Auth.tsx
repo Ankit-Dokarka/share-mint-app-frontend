@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
@@ -60,8 +59,9 @@ export default function AuthPage() {
       if (!data.fullName) return;
       const success = await register(data.fullName, data.email, data.password);
       if (success) {
-       
-        navigate("/verify-email", { state: { email: data.email } });
+        navigate("/verify-email", {
+          state: { email: data.email, fromSignup: true },
+        });
       }
     }
   };

@@ -31,7 +31,7 @@ export default function VerifyEmail() {
   useEffect(() => {
     // If user navigates here directly without email, send them back to login
     if (!email) {
-      navigate("/login");
+      navigate("/", { replace: true });
       return;
     }
     inputRefs.current[0]?.focus();
