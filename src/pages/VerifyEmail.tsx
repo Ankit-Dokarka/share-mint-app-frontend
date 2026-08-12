@@ -13,7 +13,7 @@ export default function VerifyEmail() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Get email passed from the Register page
+  
   const email = location.state?.email || "";
 
   const [isVerifying, setIsVerifying] = useState(false);
@@ -29,7 +29,7 @@ export default function VerifyEmail() {
   const otpValues = watch("otp");
 
   useEffect(() => {
-    // If user navigates here directly without email, send them back to login
+    
     if (!email) {
       navigate("/", { replace: true });
       return;
@@ -88,7 +88,7 @@ export default function VerifyEmail() {
       const response = await authAPI.verifyEmail(email, finalOtp);
       setSuccessMsg(response.message + " Redirecting to login...");
 
-      // Wait 2 seconds then redirect to login
+      
       setTimeout(() => {
         navigate("/login");
       }, 2000);
