@@ -25,10 +25,9 @@ export const getFriendlyError = (err: unknown): string => {
   }
 
 
-  if (err instanceof Error) {
+    if (err instanceof Error) {
     const lowerMsg = err.message.toLowerCase();
     
-   
     if (lowerMsg.includes("network") || lowerMsg.includes("failed to fetch")) {
       return "Please check your internet connection and try again.";
     }
@@ -37,6 +36,10 @@ export const getFriendlyError = (err: unknown): string => {
     }
     
    
+    if (lowerMsg.includes("unexpected token") || lowerMsg.includes("is not valid json")) {
+      return "The server returned an unexpected response. Please try again later.";
+    }
+
     if (err.message) {
       return err.message;
     }

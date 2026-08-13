@@ -12,6 +12,7 @@ type GroupContextType = {
   groups: Group[];
   isLoadingGroups: boolean;
   fetchGroups: () => Promise<void>;
+  groupsError: string | null;
 };
 
 export const GroupContext = createContext<GroupContextType | null>(null);

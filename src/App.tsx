@@ -25,7 +25,7 @@ export default function App() {
           <Route path="/login" element={<AuthPage />} />
         </Route>
 
-        {/* Protected Routes (Requires login) */}
+       
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />

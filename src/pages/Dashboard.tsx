@@ -1,11 +1,17 @@
 import { Link } from "react-router-dom";
-import { FiArrowRight, FiCreditCard, FiPlus, FiUsers } from "react-icons/fi";
+import {
+  FiAlertCircle,
+  FiArrowRight,
+  FiCreditCard,
+  FiPlus,
+  FiUsers,
+} from "react-icons/fi";
 import useAuth from "../context/auth/AuthContext";
 import { useGroup } from "../context/groups/GroupsContext";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { groups, isLoadingGroups } = useGroup();
+  const { groups, isLoadingGroups, groupsError } = useGroup();
 
   const uniqueMemberCount = new Set(
     groups.flatMap((group) => group.members.map((member) => member._id)),
@@ -38,13 +44,28 @@ export default function Dashboard() {
       </div>
 
       {isLoadingGroups ? (
-        <div className="grid gap-4 md:grid-cols-3">
-          {[0, 1, 2].map((item) => (
-            <div
-              key={item}
-              className="h-36 animate-pulse rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface)"
-            />
-          ))}
+        <div className="flex flex-col gap-6">
+          <div className="grid gap-4 md:grid-cols-3">
+            {[0, 1, 2].map((item) => (
+              <div
+                key={item}
+                className="h-36 animate-pulse rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface)"
+              />
+            ))}
+          </div>
+          <div className="h-64 animate-pulse rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface)" />
+        </div>
+      ) : groupsError ? (
+        <div className="flex min-h-[26rem] flex-col items-center justify-center rounded-(--btn-radius) border border-dashed border-(--color-danger) bg-(--color-surface) px-6 text-center shadow-sm">
+          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-(--color-danger-soft) text-(--color-danger)">
+            <FiAlertCircle size={30} />
+          </div>
+          <h2 className="text-xl font-bold text-(--color-text)">
+            Failed to load dashboard data
+          </h2>
+          <p className="mt-2 max-w-md text-sm leading-6 text-(--color-text-muted)">
+            {groupsError}
+          </p>
         </div>
       ) : groups.length === 0 ? (
         <div className="flex min-h-[26rem] flex-col items-center justify-center rounded-(--btn-radius) border border-dashed border-(--color-border-strong) bg-(--color-surface) px-6 text-center shadow-sm">
@@ -67,86 +88,83 @@ export default function Dashboard() {
           </Link>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface) p-5 shadow-sm">
-            <div className="flex h-10 w-10 items-center justify-center rounded-(--btn-radius) bg-(--color-primary-soft) text-(--color-primary)">
-              <FiUsers size={20} />
+        <div className="flex flex-col gap-6">
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface) p-5 shadow-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-(--btn-radius) bg-(--color-primary-soft) text-(--color-primary)">
+                <FiUsers size={20} />
+              </div>
+              <p className="mt-5 text-sm font-medium text-(--color-text-muted)">
+                Active groups
+              </p>
+              <p className="mt-1 text-3xl font-extrabold text-(--color-text)">
+                {groups.length}
+              </p>
             </div>
-            <p className="mt-5 text-sm font-medium text-(--color-text-muted)">
-              Active groups
-            </p>
-            <p className="mt-1 text-3xl font-extrabold text-(--color-text)">
-              {groups.length}
-            </p>
+
+            <div className="rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface) p-5 shadow-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-(--btn-radius) bg-(--color-success-soft) text-(--color-success)">
+                <FiUsers size={20} />
+              </div>
+              <p className="mt-5 text-sm font-medium text-(--color-text-muted)">
+                Members connected
+              </p>
+              <p className="mt-1 text-3xl font-extrabold text-(--color-text)">
+                {uniqueMemberCount}
+              </p>
+            </div>
+
+            <div className="rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface) p-5 shadow-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-(--btn-radius) bg-(--color-danger-soft) text-(--color-danger)">
+                <FiCreditCard size={20} />
+              </div>
+              <p className="mt-5 text-sm font-medium text-(--color-text-muted)">
+                Balance tracking
+              </p>
+              <p className="mt-1 text-lg font-bold text-(--color-text)">
+                To pay and to receive
+              </p>
+            </div>
           </div>
 
-          <div className="rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface) p-5 shadow-sm">
-            <div className="flex h-10 w-10 items-center justify-center rounded-(--btn-radius) bg-(--color-success-soft) text-(--color-success)">
-              <FiUsers size={20} />
+          <div className="rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface) shadow-sm">
+            <div className="flex items-center justify-between border-b border-(--color-border) px-5 py-4">
+              <h2 className="text-base font-bold text-(--color-text)">
+                Recent groups
+              </h2>
+              <Link
+                to="/dashboard/groups"
+                className="text-sm font-semibold text-(--color-primary) hover:text-(--color-primary-hover)"
+              >
+                View all
+              </Link>
             </div>
-            <p className="mt-5 text-sm font-medium text-(--color-text-muted)">
-              Members connected
-            </p>
-            <p className="mt-1 text-3xl font-extrabold text-(--color-text)">
-              {uniqueMemberCount}
-            </p>
-          </div>
-
-          <div className="rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface) p-5 shadow-sm">
-            <div className="flex h-10 w-10 items-center justify-center rounded-(--btn-radius) bg-(--color-danger-soft) text-(--color-danger)">
-              <FiCreditCard size={20} />
+            <div className="divide-y divide-(--color-border)">
+              {groups.slice(0, 4).map((group) => (
+                <Link
+                  key={group._id}
+                  to={`/dashboard/groups/${group._id}`}
+                  className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-(--color-surface-strong)/60"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-(--color-text)">
+                      {group.name}
+                    </p>
+                    <p className="mt-1 text-xs text-(--color-text-muted)">
+                      {group.members.length}{" "}
+                      {group.members.length === 1 ? "member" : "members"}
+                    </p>
+                  </div>
+                  <FiArrowRight
+                    size={16}
+                    className="shrink-0 text-(--color-text-soft)"
+                  />
+                </Link>
+              ))}
             </div>
-            <p className="mt-5 text-sm font-medium text-(--color-text-muted)">
-              Balance tracking
-            </p>
-            <p className="mt-1 text-lg font-bold text-(--color-text)">
-              To pay and to receive
-            </p>
           </div>
         </div>
       )}
-
-      <div className="rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface) shadow-sm">
-        <div className="flex items-center justify-between border-b border-(--color-border) px-5 py-4">
-          <h2 className="text-base font-bold text-(--color-text)">
-            Recent groups
-          </h2>
-          <Link
-            to="/dashboard/groups"
-            className="text-sm font-semibold text-(--color-primary) hover:text-(--color-primary-hover)"
-          >
-            View all
-          </Link>
-        </div>
-        <div className="divide-y divide-(--color-border)">
-          {groups.slice(0, 4).map((group) => (
-            <Link
-              key={group._id}
-              to={`/dashboard/groups/${group._id}`}
-              className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-(--color-surface-strong)/60"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-(--color-text)">
-                  {group.name}
-                </p>
-                <p className="mt-1 text-xs text-(--color-text-muted)">
-                  {group.members.length}{" "}
-                  {group.members.length === 1 ? "member" : "members"}
-                </p>
-              </div>
-              <FiArrowRight
-                size={16}
-                className="shrink-0 text-(--color-text-soft)"
-              />
-            </Link>
-          ))}
-          {groups.length === 0 && (
-            <div className="px-5 py-8 text-center text-sm text-(--color-text-muted)">
-              No groups created yet.
-            </div>
-          )}
-        </div>
-      </div>
     </section>
   );
 }

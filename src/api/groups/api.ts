@@ -45,7 +45,6 @@ export const groupsAPI = {
   },
 
   async getUsers(): Promise<User[]> {
-    // Backend route GET /api/users gets all users
     const response = await fetch(`${BASE_URL}/api/users`, {
       method: "GET",
       credentials: "include",

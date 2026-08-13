@@ -3,14 +3,15 @@ import type { User } from "../../types/user";
 import { groupsAPI, type CreateGroupPayload } from "../../api/groups/api";
 import { GroupContext } from "./GroupsContext";
 import type { Group } from "../../types/groups";
+import { getFriendlyError } from "../../utils/getFriendlyError";
 
 export function GroupProvider({ children }: { children: ReactNode }) {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
-
   const [groups, setGroups] = useState<Group[]>([]);
   const [isLoadingGroups, setIsLoadingGroups] = useState(true);
+  const [groupsError, setGroupsError] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
     setIsLoadingUsers(true);
@@ -26,11 +27,12 @@ export function GroupProvider({ children }: { children: ReactNode }) {
 
   const fetchGroups = useCallback(async () => {
     setIsLoadingGroups(true);
+    setGroupsError(null);
     try {
       const data = await groupsAPI.getGroups();
       setGroups(data);
     } catch (error) {
-      console.error("Failed to fetch groups:", error);
+      setGroupsError(getFriendlyError(error));
     } finally {
       setIsLoadingGroups(false);
     }
@@ -64,6 +66,7 @@ export function GroupProvider({ children }: { children: ReactNode }) {
         fetchUsers,
         groups,
         isLoadingGroups,
+        groupsError,
         fetchGroups,
         createGroup,
         isCreatingGroup,

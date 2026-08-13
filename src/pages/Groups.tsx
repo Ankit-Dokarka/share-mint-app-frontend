@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { FiArrowRight, FiLoader, FiPlus, FiUsers } from "react-icons/fi";
+import { FiAlertCircle, FiArrowRight, FiPlus, FiUsers } from "react-icons/fi";
 import AddGroupModal from "../modals/AddGroupModal";
 import { useGroup } from "../context/groups/GroupsContext";
 
 export default function Groups() {
-  const { groups, isLoadingGroups } = useGroup();
+  const { groups, isLoadingGroups, groupsError } = useGroup();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   return (
@@ -30,11 +30,39 @@ export default function Groups() {
         </div>
 
         {isLoadingGroups ? (
-          <div className="flex items-center justify-center py-24 bg-(--color-surface) border border-(--color-border) rounded-(--btn-radius) shadow-sm">
-            <FiLoader
-              className="animate-spin text-(--color-primary)"
-              size={28}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="h-48 animate-pulse rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface) p-5 shadow-sm"
+              >
+                <div className="flex justify-between">
+                  <div className="h-11 w-11 rounded-(--btn-radius) bg-(--color-surface-strong)"></div>
+                  <div className="h-5 w-5 bg-(--color-surface-strong)"></div>
+                </div>
+                <div className="mt-6 h-5 w-2/3 rounded bg-(--color-surface-strong)"></div>
+                <div className="mt-3 h-3 w-1/3 rounded bg-(--color-surface-strong)"></div>
+                <div className="mt-8 flex items-center justify-between">
+                  <div className="flex gap-2">
+                    <div className="h-8 w-8 rounded-full bg-(--color-surface-strong)"></div>
+                    <div className="h-8 w-8 rounded-full bg-(--color-surface-strong)"></div>
+                  </div>
+                  <div className="h-8 w-12 rounded bg-(--color-surface-strong)"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : groupsError ? (
+          <div className="flex min-h-120 flex-col items-center justify-center text-center py-20 px-6 bg-(--color-surface) border border-dashed border-(--color-danger) rounded-(--btn-radius) shadow-sm">
+            <div className="w-18 h-18 flex items-center justify-center rounded-full bg-(--color-danger-soft) mb-5">
+              <FiAlertCircle size={28} className="text-(--color-danger)" />
+            </div>
+            <h2 className="text-xl font-bold text-(--color-text) mb-2">
+              Failed to load groups
+            </h2>
+            <p className="max-w-md text-sm leading-6 text-(--color-text-muted)">
+              {groupsError}
+            </p>
           </div>
         ) : groups.length === 0 ? (
           <div className="flex min-h-120 flex-col items-center justify-center text-center py-20 px-6 bg-(--color-surface) border border-dashed border-(--color-border-strong) rounded-(--btn-radius) shadow-sm">
