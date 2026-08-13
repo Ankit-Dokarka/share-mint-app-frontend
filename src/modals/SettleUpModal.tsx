@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { FiX, FiAlertCircle, FiLoader, FiCheckCircle } from "react-icons/fi";
 import { settlementAPI } from "../api/settlement/api";
 import type { Balance } from "../types/expence";
@@ -12,6 +13,12 @@ type SettleUpModalProps = {
   onSettled: () => Promise<void> | void;
 };
 
+type SettleUpFormValues = {
+  receiver: string;
+  amount: string;
+  note?: string;
+};
+
 export default function SettleUpModal({
   isOpen,
   onClose,
@@ -20,51 +27,53 @@ export default function SettleUpModal({
   onSettled,
 }: SettleUpModalProps) {
   const { user } = useAuth();
-  const [selectedReceiver, setSelectedReceiver] = useState("");
-  const [amount, setAmount] = useState("");
-  const [note, setNote] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // Find users that the current user owes money to (balance < 0)
   const usersToPay = balances.filter(
     (b) => b.balance > 0 && b.user._id !== user?._id,
   );
 
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isValid, isSubmitting },
+  } = useForm<SettleUpFormValues>({
+    mode: "onChange",
+    defaultValues: {
+      receiver: "",
+      amount: "",
+      note: "",
+    },
+  });
 
   useEffect(() => {
     if (isOpen) {
-      setSelectedReceiver("");
-      setAmount("");
-      setNote("");
+      reset({
+        receiver: "",
+        amount: "",
+        note: "",
+      });
       setApiError(null);
-      setIsSubmitting(false);
     }
-  }, [isOpen]);
+  }, [isOpen, reset]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedReceiver || !amount || Number(amount) <= 0) {
-      setApiError("Please select a user and enter a valid amount.");
-      return;
-    }
+  const onSubmit = async (data: SettleUpFormValues) => {
+    setApiError(null);
 
-    setIsSubmitting(true);
     try {
       await settlementAPI.createSettlement({
         groupId,
-        receiver: selectedReceiver,
-        amount: Number(amount),
-        note: note.trim(),
+        receiver: data.receiver,
+        amount: Number(data.amount),
+        note: data.note?.trim() || "",
       });
       await onSettled();
       onClose();
     } catch (err) {
       setApiError(err instanceof Error ? err.message : "Failed to settle up");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -93,7 +102,7 @@ export default function SettleUpModal({
         </div>
 
         <form
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmit(onSubmit)}
           className="p-5 flex flex-col gap-4 overflow-y-auto"
         >
           {apiError && (
@@ -105,7 +114,8 @@ export default function SettleUpModal({
 
           {usersToPay.length === 0 ? (
             <div className="text-center py-8 text-sm text-(--color-text-muted)">
-              You are all settled up! You don't owe anyone money in this group.
+              You are all settled up! You don't have to pay anyone in this
+              group.
             </div>
           ) : (
             <>
@@ -114,19 +124,25 @@ export default function SettleUpModal({
                   Pay To <span className="text-(--color-danger)">*</span>
                 </label>
                 <select
-                  value={selectedReceiver}
-                  onChange={(e) => setSelectedReceiver(e.target.value)}
                   disabled={isSubmitting}
+                  {...register("receiver", {
+                    required: "Please select a user",
+                  })}
                   className="w-full px-4 py-3 text-sm text-(--color-text) bg-(--color-surface-strong)/70 border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/25 focus:border-(--color-primary) transition-all disabled:opacity-70"
                 >
                   <option value="">Select a member</option>
                   {usersToPay.map((b) => (
                     <option key={b.user._id} value={b.user._id}>
-                      {b.user.fullName} (You owe{" "}
+                      {b.user.fullName} (You have to pay{" "}
                       {formatINR(Math.abs(b.balance))})
                     </option>
                   ))}
                 </select>
+                {errors.receiver && (
+                  <p className="text-xs text-(--color-danger)">
+                    {errors.receiver.message}
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -138,16 +154,27 @@ export default function SettleUpModal({
                     ₹
                   </span>
                   <input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     placeholder="0.00"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
                     disabled={isSubmitting}
+                    {...register("amount", {
+                      required: "Amount is required",
+                      validate: (val) => {
+                        const num = Number(val);
+                        return (
+                          (!isNaN(num) && num > 0) || "Enter a valid amount"
+                        );
+                      },
+                    })}
                     className="w-full pl-8 pr-4 py-3 text-sm text-(--color-text) placeholder:text-(--color-text-soft) bg-(--color-surface-strong)/70 border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/25 focus:border-(--color-primary) transition-all disabled:opacity-70"
                   />
                 </div>
+                {errors.amount && (
+                  <p className="text-xs text-(--color-danger)">
+                    {errors.amount.message}
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -157,9 +184,8 @@ export default function SettleUpModal({
                 <input
                   type="text"
                   placeholder="e.g. Cash, GPay, etc."
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
                   disabled={isSubmitting}
+                  {...register("note")}
                   className="w-full px-4 py-3 text-sm text-(--color-text) placeholder:text-(--color-text-soft) bg-(--color-surface-strong)/70 border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/25 focus:border-(--color-primary) transition-all disabled:opacity-70"
                 />
               </div>
@@ -175,8 +201,8 @@ export default function SettleUpModal({
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-(--color-success) hover:bg-(--color-success-hover) rounded-(--btn-radius) transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+                  disabled={!isValid || isSubmitting}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-(--color-success) hover:bg-(--color-success-hover) rounded-(--btn-radius) transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <>

@@ -18,7 +18,7 @@ export default function Dashboard() {
   ).size;
 
   return (
-    <section className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+    <section className="mx-auto flex w-full max-w-10xl flex-col gap-6">
       <div className="flex flex-col gap-3 rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface) p-6 shadow-sm md:p-8">
         <p className="text-sm font-semibold text-(--color-primary)">
           {user?.fullName ? `Hi ${user.fullName}` : "Hello"}

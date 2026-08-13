@@ -13,32 +13,30 @@ import VerificationRoute from "./routes/VerificationRoute";
 
 import GroupDetails from "./pages/GroupDetails";
 import LandingPage from "./pages/LandingPage";
+import Payments from "./pages/Payments";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        
-
         <Route element={<PublicRoute />}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<AuthPage />} />
         </Route>
 
-       
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="groups" element={<Groups />} />
-           
+
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="payments" element={<Payments />} />
 
             <Route path="groups/:groupId" element={<GroupDetails />} />
           </Route>
         </Route>
 
-  
         <Route element={<VerificationRoute />}>
           <Route path="/verify-email" element={<VerifyEmail />} />
         </Route>

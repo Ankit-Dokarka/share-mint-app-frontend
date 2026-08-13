@@ -16,7 +16,7 @@ import { profileAPI } from "../api/profile/api";
 type ToastType = "success" | "error";
 
 const ProfileSkeleton = () => (
-  <div className="max-w-3xl mx-auto flex flex-col gap-8 animate-pulse">
+  <div className="max-w-10xl mx-auto flex flex-col gap-8 animate-pulse">
     <div className="flex flex-col gap-2">
       <div className="h-7 w-32 bg-(--color-surface-strong) rounded-md"></div>
       <div className="h-4 w-64 bg-(--color-surface-strong) rounded-md"></div>
@@ -165,7 +165,7 @@ export default function Profile() {
     fullName.trim() === "";
 
   return (
-    <div className="max-w-3xl mx-auto flex flex-col gap-8">
+    <div className="max-w-10xl mx-auto flex flex-col gap-8">
       {/* Toast Notification */}
       {toast && (
         <div className="fixed top-20 right-6 z-50 animate-[slideIn_0.3s_ease-out]">

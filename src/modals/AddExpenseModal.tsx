@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 import {
   FiAlertCircle,
   FiCheck,
@@ -16,7 +17,15 @@ type AddExpenseModalProps = {
   onCreated: () => Promise<void> | void;
 };
 
-// Helper to format HTML datetime-local input to "10 Aug 2026, 8:30 PM"
+type ExpenseFormValues = {
+  title: string;
+  description?: string;
+  amount: string;
+  expenseDate: string;
+  paidBy: string;
+  participants: string[];
+};
+
 const formatExpenseDate = (htmlDate: string): string => {
   if (!htmlDate) return "";
   const date = new Date(htmlDate);
@@ -30,7 +39,7 @@ const formatExpenseDate = (htmlDate: string): string => {
   const minutes = String(date.getMinutes()).padStart(2, "0");
   const ampm = hours >= 12 ? "PM" : "AM";
   hours = hours % 12;
-  hours = hours ? hours : 12; // the hour '0' should be '12'
+  hours = hours ? hours : 12;
 
   return `${day} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
 };
@@ -48,84 +57,75 @@ export default function AddExpenseModal({
   group,
   onCreated,
 }: AddExpenseModalProps) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [amount, setAmount] = useState("");
-  const [paidBy, setPaidBy] = useState("");
-  const [expenseDate, setExpenseDate] = useState(getDefaultDateTime());
-  const [participantIds, setParticipantIds] = useState<string[]>([]);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [apiError, setApiError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const members = useMemo(() => group.members ?? [], [group.members]);
   const isTwoPersonGroup = members.length === 2;
 
-  useEffect(() => {
-    if (!isOpen) return;
+  const [apiError, setApiError] = useState<string | null>(null);
 
-    const defaultParticipantIds = members.map((member) => member._id);
-    void Promise.resolve().then(() => {
-      setTitle("");
-      setDescription("");
-      setAmount("");
-      setExpenseDate(getDefaultDateTime()); // Reset to current date/time
-      setPaidBy(defaultParticipantIds[0] ?? "");
-      setParticipantIds(defaultParticipantIds);
-      setErrors({});
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors, isValid, isSubmitting },
+  } = useForm<ExpenseFormValues>({
+    mode: "onChange", // Validates on change so the button enables immediately when valid
+    defaultValues: {
+      title: "",
+      description: "",
+      amount: "",
+      expenseDate: getDefaultDateTime(),
+      paidBy: members[0]?._id ?? "",
+      participants: members.map((m) => m._id),
+    },
+  });
+
+  const selectedParticipants = watch("participants");
+
+  useEffect(() => {
+    if (isOpen) {
+      const defaultParticipantIds = members.map((m) => m._id);
+      reset({
+        title: "",
+        description: "",
+        amount: "",
+        expenseDate: getDefaultDateTime(),
+        paidBy: defaultParticipantIds[0] ?? "",
+        participants: defaultParticipantIds,
+      });
       setApiError(null);
-      setIsSubmitting(false);
-    });
-  }, [isOpen, members]);
+    }
+  }, [isOpen, members, reset]);
 
   if (!isOpen) return null;
-
-  const validate = () => {
-    const nextErrors: Record<string, string> = {};
-
-    if (!title.trim()) nextErrors.title = "Title is required";
-    if (!amount || Number.isNaN(Number(amount)) || Number(amount) <= 0) {
-      nextErrors.amount = "Enter a valid amount";
-    }
-    if (!expenseDate) nextErrors.expenseDate = "Date and time are required";
-    if (!paidBy) nextErrors.paidBy = "Select who paid";
-    if (participantIds.length === 0) {
-      nextErrors.participants = "Select at least one participant";
-    }
-
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
-  };
 
   const toggleParticipant = (userId: string) => {
     if (isTwoPersonGroup) return;
 
-    setParticipantIds((current) =>
-      current.includes(userId)
-        ? current.filter((id) => id !== userId)
-        : [...current, userId],
-    );
+    const current = selectedParticipants || [];
+    const updated = current.includes(userId)
+      ? current.filter((id) => id !== userId)
+      : [...current, userId];
+
+    setValue("participants", updated, { shouldValidate: true });
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!validate()) return;
-
-    setIsSubmitting(true);
+  const onSubmit = async (data: ExpenseFormValues) => {
     setApiError(null);
 
     try {
-      const participantsPayload = participantIds.map((id) => ({ user: id }));
+      const participantsPayload = data.participants.map((id) => ({ user: id }));
 
       await expenseAPI.createExpense({
-        title: title.trim(),
-        description: description.trim(),
-        amount: Number(amount),
+        title: data.title.trim(),
+        description: data.description?.trim() || "",
+        amount: Number(data.amount),
         groupId: group._id,
-        paidBy,
+        paidBy: data.paidBy,
         splitType: "equal",
         participants: participantsPayload,
-        expenseDate: formatExpenseDate(expenseDate),
+        expenseDate: formatExpenseDate(data.expenseDate),
       });
       await onCreated();
       onClose();
@@ -133,8 +133,6 @@ export default function AddExpenseModal({
       setApiError(
         error instanceof Error ? error.message : "Failed to add expense",
       );
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -170,7 +168,10 @@ export default function AddExpenseModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col overflow-y-auto">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex flex-col overflow-y-auto"
+        >
           <div className="p-5 flex flex-col gap-4">
             {apiError && (
               <div className="flex items-center gap-2 text-sm text-(--color-danger) bg-(--color-danger)/10 p-3 rounded-(--btn-radius) border border-(--color-danger)/30">
@@ -179,6 +180,7 @@ export default function AddExpenseModal({
               </div>
             )}
 
+            {/* Title */}
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-semibold text-(--color-text)">
                 Title <span className="text-(--color-danger)">*</span>
@@ -186,16 +188,18 @@ export default function AddExpenseModal({
               <input
                 type="text"
                 placeholder="e.g. Dinner"
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
                 disabled={isSubmitting}
+                {...register("title", { required: "Title is required" })}
                 className="w-full px-4 py-3 text-sm text-(--color-text) placeholder:text-(--color-text-soft) bg-(--color-surface-strong)/70 border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/25 focus:border-(--color-primary) transition-all disabled:opacity-70"
               />
               {errors.title && (
-                <p className="text-xs text-(--color-danger)">{errors.title}</p>
+                <p className="text-xs text-(--color-danger)">
+                  {errors.title.message}
+                </p>
               )}
             </div>
 
+            {/* Description */}
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-semibold text-(--color-text)">
                 Description
@@ -203,14 +207,15 @@ export default function AddExpenseModal({
               <input
                 type="text"
                 placeholder="Optional notes"
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
                 disabled={isSubmitting}
+                {...register("description")}
                 className="w-full px-4 py-3 text-sm text-(--color-text) placeholder:text-(--color-text-soft) bg-(--color-surface-strong)/70 border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/25 focus:border-(--color-primary) transition-all disabled:opacity-70"
               />
             </div>
 
+            {/* Amount & Date Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Amount */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-(--color-text)">
                   Amount <span className="text-(--color-danger)">*</span>
@@ -220,50 +225,58 @@ export default function AddExpenseModal({
                     ₹
                   </span>
                   <input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text" // Kept as text to prevent scroll increase
+                    inputMode="decimal" // Shows numeric keyboard on mobile
                     placeholder="0.00"
-                    value={amount}
-                    onChange={(event) => setAmount(event.target.value)}
                     disabled={isSubmitting}
+                    {...register("amount", {
+                      required: "Amount is required",
+                      validate: (val) => {
+                        const num = Number(val);
+                        return (
+                          (!isNaN(num) && num > 0) || "Enter a valid amount"
+                        );
+                      },
+                    })}
                     className="w-full pl-8 pr-4 py-3 text-sm text-(--color-text) placeholder:text-(--color-text-soft) bg-(--color-surface-strong)/70 border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/25 focus:border-(--color-primary) transition-all disabled:opacity-70"
                   />
                 </div>
                 {errors.amount && (
                   <p className="text-xs text-(--color-danger)">
-                    {errors.amount}
+                    {errors.amount.message}
                   </p>
                 )}
               </div>
 
+              {/* Date & Time */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-(--color-text)">
                   Date & Time <span className="text-(--color-danger)">*</span>
                 </label>
                 <input
                   type="datetime-local"
-                  value={expenseDate}
-                  onChange={(event) => setExpenseDate(event.target.value)}
                   disabled={isSubmitting}
+                  {...register("expenseDate", {
+                    required: "Date and time are required",
+                  })}
                   className="w-full px-4 py-3 text-sm text-(--color-text) placeholder:text-(--color-text-soft) bg-(--color-surface-strong)/70 border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/25 focus:border-(--color-primary) transition-all disabled:opacity-70"
                 />
                 {errors.expenseDate && (
                   <p className="text-xs text-(--color-danger)">
-                    {errors.expenseDate}
+                    {errors.expenseDate.message}
                   </p>
                 )}
               </div>
             </div>
 
+            {/* Paid By */}
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-semibold text-(--color-text)">
                 Paid By <span className="text-(--color-danger)">*</span>
               </label>
               <select
-                value={paidBy}
-                onChange={(event) => setPaidBy(event.target.value)}
                 disabled={isSubmitting}
+                {...register("paidBy", { required: "Select who paid" })}
                 className="w-full px-4 py-3 text-sm text-(--color-text) bg-(--color-surface-strong)/70 border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/25 focus:border-(--color-primary) transition-all disabled:opacity-70"
               >
                 {members.map((member) => (
@@ -273,10 +286,13 @@ export default function AddExpenseModal({
                 ))}
               </select>
               {errors.paidBy && (
-                <p className="text-xs text-(--color-danger)">{errors.paidBy}</p>
+                <p className="text-xs text-(--color-danger)">
+                  {errors.paidBy.message}
+                </p>
               )}
             </div>
 
+            {/* Split Rule */}
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-semibold text-(--color-text)">
                 Split Rule
@@ -289,13 +305,14 @@ export default function AddExpenseModal({
               />
             </div>
 
+            {/* Participants */}
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-semibold text-(--color-text)">
                 Participants <span className="text-(--color-danger)">*</span>
               </label>
               <div className="max-h-56 overflow-y-auto grid gap-2 border border-(--color-border) rounded-(--btn-radius) p-2 bg-(--color-surface-strong)/70">
                 {members.map((member) => {
-                  const isChecked = participantIds.includes(member._id);
+                  const isChecked = selectedParticipants?.includes(member._id);
 
                   return (
                     <label
@@ -334,7 +351,7 @@ export default function AddExpenseModal({
                       </span>
                       <input
                         type="checkbox"
-                        checked={isChecked}
+                        checked={isChecked || false}
                         disabled={isTwoPersonGroup || isSubmitting}
                         onChange={() => toggleParticipant(member._id)}
                         className="sr-only"
@@ -345,12 +362,13 @@ export default function AddExpenseModal({
               </div>
               {errors.participants && (
                 <p className="text-xs text-(--color-danger)">
-                  {errors.participants}
+                  {errors.participants.message}
                 </p>
               )}
             </div>
           </div>
 
+          {/* Footer Buttons */}
           <div className="flex justify-end gap-3 p-5 bg-(--color-surface-strong)/50 border-t border-(--color-border) shrink-0">
             <button
               type="button"
@@ -362,8 +380,8 @@ export default function AddExpenseModal({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-(--color-primary) hover:bg-(--color-primary-hover) rounded-(--btn-radius) transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+              disabled={!isValid || isSubmitting}
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-(--color-primary) hover:bg-(--color-primary-hover) rounded-(--btn-radius) transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>

@@ -10,7 +10,7 @@ export default function Groups() {
 
   return (
     <>
-      <section className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+      <section className="mx-auto flex w-full max-w-10xl flex-col gap-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-extrabold text-(--color-text)">

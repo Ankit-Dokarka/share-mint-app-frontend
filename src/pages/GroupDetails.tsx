@@ -5,7 +5,6 @@ import {
   FiArrowLeft,
   FiCalendar,
   FiCreditCard,
-  FiLoader,
   FiPlus,
   FiUsers,
   FiCheckCircle,
@@ -14,24 +13,22 @@ import { expenseAPI } from "../api/expense/api";
 import AddExpenseModal from "../modals/AddExpenseModal";
 import SettleUpModal from "../modals/SettleUpModal";
 import useAuth from "../context/auth/AuthContext";
-import { useGroup } from "../context/groups/GroupsContext"; // Import the context hook
+import { useGroup } from "../context/groups/GroupsContext";
 import type { Balance, Expense } from "../types/expence";
-
 
 export default function GroupDetails() {
   const { groupId } = useParams<{ groupId: string }>();
   const { user } = useAuth();
   const { groups, isLoadingGroups } = useGroup();
 
-  // Find the group from the context instead of making an API call
   const group = useMemo(
     () => groups.find((g) => g._id === groupId),
-    [groups, groupId]
+    [groups, groupId],
   );
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [balances, setBalances] = useState<Balance[]>([]);
-  const [isLoadingExpenses, setIsLoadingExpenses] = useState(true);
+  const [isLoadingExpenses, setIsLoadingExpenses] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isSettleUpOpen, setIsSettleUpOpen] = useState(false);
@@ -43,7 +40,6 @@ export default function GroupDetails() {
     setError(null);
 
     try {
-      // We only need to fetch expenses and balances, group data comes from context
       const expenseData = await expenseAPI.getGroupExpenses(groupId);
 
       setExpenses(expenseData.expenses);
@@ -58,9 +54,8 @@ export default function GroupDetails() {
   }, [groupId]);
 
   useEffect(() => {
-    if (group) {
-      void Promise.resolve().then(fetchGroupDetails);
-    }
+    if (!group) return; // Don't fetch if group doesn't exist
+    void Promise.resolve().then(fetchGroupDetails);
   }, [fetchGroupDetails, group]);
 
   const currentUserBalance = useMemo(
@@ -92,8 +87,11 @@ export default function GroupDetails() {
     return `You have ${formatINR(Math.abs(currentUserBalance.balance))} to pay`;
   };
 
+  const isOverallLoading =
+    isLoadingGroups || (group ? isLoadingExpenses : false);
+
   return (
-    <section className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+    <section className="mx-auto flex w-full max-w-10xl flex-col gap-6">
       <Link
         to="/dashboard/groups"
         className="inline-flex items-center gap-2 text-sm text-(--color-text-muted) hover:text-(--color-primary) transition-colors w-fit"
@@ -101,17 +99,89 @@ export default function GroupDetails() {
         <FiArrowLeft size={16} /> Groups
       </Link>
 
-      {isLoadingGroups || isLoadingExpenses ? (
-        <div className="flex items-center justify-center py-28 bg-(--color-surface) border border-(--color-border) rounded-(--btn-radius) shadow-sm">
-          <FiLoader className="animate-spin text-(--color-primary)" size={32} />
+      {isOverallLoading ? (
+        <div className="flex flex-col gap-6">
+          {/* Header Skeleton */}
+          <div className="rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface) p-6 shadow-sm h-44 animate-pulse">
+            <div className="flex justify-between">
+              <div className="w-1/2 space-y-3">
+                <div className="h-8 w-3/4 bg-(--color-surface-strong) rounded-(--btn-radius)"></div>
+                <div className="h-4 w-1/2 bg-(--color-surface-strong) rounded-(--btn-radius)"></div>
+              </div>
+              <div className="flex gap-2">
+                <div className="h-10 w-28 bg-(--color-surface-strong) rounded-(--btn-radius)"></div>
+                <div className="h-10 w-32 bg-(--color-surface-strong) rounded-(--btn-radius)"></div>
+              </div>
+            </div>
+            <div className="mt-6 flex gap-2">
+              <div className="h-8 w-24 bg-(--color-surface-strong) rounded-full"></div>
+              <div className="h-8 w-24 bg-(--color-surface-strong) rounded-full"></div>
+              <div className="h-8 w-24 bg-(--color-surface-strong) rounded-full"></div>
+            </div>
+          </div>
+
+          {/* Balance Skeleton */}
+          <div className="bg-(--color-surface) border border-(--color-border) rounded-(--btn-radius) p-6 shadow-sm h-28 animate-pulse space-y-3">
+            <div className="h-4 w-1/4 bg-(--color-surface-strong) rounded-(--btn-radius)"></div>
+            <div className="h-8 w-1/3 bg-(--color-surface-strong) rounded-(--btn-radius)"></div>
+          </div>
+
+          {/* Expenses List Skeleton */}
+          <div className="bg-(--color-surface) border border-(--color-border) rounded-(--btn-radius) shadow-sm p-5 space-y-4 animate-pulse">
+            <div className="h-6 w-1/4 bg-(--color-surface-strong) rounded-(--btn-radius)"></div>
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="h-12 w-full bg-(--color-surface-strong) rounded-(--btn-radius)"
+              ></div>
+            ))}
+          </div>
+
+          {/* Group Balances Skeleton */}
+          <div className="bg-(--color-surface) border border-(--color-border) rounded-(--btn-radius) shadow-sm p-5 space-y-4 animate-pulse">
+            <div className="h-6 w-1/4 bg-(--color-surface-strong) rounded-(--btn-radius)"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="h-16 w-full bg-(--color-surface-strong) rounded-(--btn-radius)"></div>
+              <div className="h-16 w-full bg-(--color-surface-strong) rounded-(--btn-radius)"></div>
+            </div>
+          </div>
         </div>
       ) : error ? (
-        <div className="flex items-center gap-3 text-sm text-(--color-danger) bg-(--color-danger)/10 p-4 rounded-(--btn-radius) border border-(--color-danger)/30">
-          <FiAlertCircle size={20} className="shrink-0" /> <p>{error}</p>
+        <div className="flex min-h-[60vh] flex-col items-center justify-center text-center py-20 px-6 bg-(--color-surface) border border-dashed border-(--color-danger) rounded-(--btn-radius) shadow-sm">
+          <div className="w-16 h-16 flex items-center justify-center rounded-full bg-(--color-danger-soft) mb-5">
+            <FiAlertCircle size={28} className="text-(--color-danger)" />
+          </div>
+          <h2 className="text-xl font-bold text-(--color-text) mb-2">
+            Failed to load group details
+          </h2>
+          <p className="max-w-md text-sm leading-6 text-(--color-text-muted)">
+            {error}
+          </p>
+          <button
+            type="button"
+            onClick={fetchGroupDetails}
+            className="mt-6 inline-flex items-center justify-center gap-2 rounded-(--btn-radius) bg-(--color-primary) px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-(--color-primary-hover)"
+          >
+            Try Again
+          </button>
         </div>
       ) : !group ? (
-        <div className="flex items-center gap-3 text-sm text-(--color-danger) bg-(--color-danger)/10 p-4 rounded-(--btn-radius) border border-(--color-danger)/30">
-          <FiAlertCircle size={20} className="shrink-0" /> <p>Group not found. It may have been deleted or you don't have access.</p>
+        <div className="flex min-h-[60vh] flex-col items-center justify-center text-center py-20 px-6 bg-(--color-surface) border border-dashed border-(--color-danger) rounded-(--btn-radius) shadow-sm">
+          <div className="w-16 h-16 flex items-center justify-center rounded-full bg-(--color-danger-soft) mb-5">
+            <FiAlertCircle size={28} className="text-(--color-danger)" />
+          </div>
+          <h2 className="text-xl font-bold text-(--color-text) mb-2">
+            Group not found
+          </h2>
+          <p className="max-w-md text-sm leading-6 text-(--color-text-muted)">
+            It may have been deleted or you don't have access to view it.
+          </p>
+          <Link
+            to="/dashboard/groups"
+            className="mt-6 inline-flex items-center justify-center gap-2 rounded-(--btn-radius) bg-(--color-primary) px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-(--color-primary-hover)"
+          >
+            <FiArrowLeft size={16} /> Back to Groups
+          </Link>
         </div>
       ) : (
         <>

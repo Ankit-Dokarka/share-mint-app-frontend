@@ -30,7 +30,7 @@ export default function Settings() {
   });
 
   return (
-    <div className="max-w-4xl mx-auto flex flex-col gap-6">
+    <div className="max-w-10xl mx-auto flex flex-col gap-6">
       {/* Notification Settings */}
       <div className="bg-(--color-surface) border border-(--color-border) rounded-(--btn-radius) shadow-sm p-6">
         <h3 className="text-lg font-semibold text-(--color-text) mb-1">
