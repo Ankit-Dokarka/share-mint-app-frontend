@@ -16,6 +16,32 @@ type AddExpenseModalProps = {
   onCreated: () => Promise<void> | void;
 };
 
+// Helper to format HTML datetime-local input to "10 Aug 2026, 8:30 PM"
+const formatExpenseDate = (htmlDate: string): string => {
+  if (!htmlDate) return "";
+  const date = new Date(htmlDate);
+  if (isNaN(date.getTime())) return "";
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = date.toLocaleString("en-US", { month: "short" });
+  const year = date.getFullYear();
+
+  let hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+
+  return `${day} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
+};
+
+// Helper to get current date/time in local format for the input default value
+const getDefaultDateTime = () => {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  return now.toISOString().slice(0, 16);
+};
+
 export default function AddExpenseModal({
   isOpen,
   onClose,
@@ -26,6 +52,7 @@ export default function AddExpenseModal({
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [paidBy, setPaidBy] = useState("");
+  const [expenseDate, setExpenseDate] = useState(getDefaultDateTime());
   const [participantIds, setParticipantIds] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
@@ -42,6 +69,7 @@ export default function AddExpenseModal({
       setTitle("");
       setDescription("");
       setAmount("");
+      setExpenseDate(getDefaultDateTime()); // Reset to current date/time
       setPaidBy(defaultParticipantIds[0] ?? "");
       setParticipantIds(defaultParticipantIds);
       setErrors({});
@@ -59,6 +87,7 @@ export default function AddExpenseModal({
     if (!amount || Number.isNaN(Number(amount)) || Number(amount) <= 0) {
       nextErrors.amount = "Enter a valid amount";
     }
+    if (!expenseDate) nextErrors.expenseDate = "Date and time are required";
     if (!paidBy) nextErrors.paidBy = "Select who paid";
     if (participantIds.length === 0) {
       nextErrors.participants = "Select at least one participant";
@@ -86,7 +115,6 @@ export default function AddExpenseModal({
     setApiError(null);
 
     try {
-      // Map participantIds to the array of objects the backend expects
       const participantsPayload = participantIds.map((id) => ({ user: id }));
 
       await expenseAPI.createExpense({
@@ -95,8 +123,9 @@ export default function AddExpenseModal({
         amount: Number(amount),
         groupId: group._id,
         paidBy,
-        splitType: "equal", // Hardcoded to equal based on current UI
+        splitType: "equal",
         participants: participantsPayload,
+        expenseDate: formatExpenseDate(expenseDate),
       });
       await onCreated();
       onClose();
@@ -181,28 +210,50 @@ export default function AddExpenseModal({
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-(--color-text)">
-                Amount <span className="text-(--color-danger)">*</span>
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-(--color-text-muted) text-sm">
-                  ₹
-                </span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={amount}
-                  onChange={(event) => setAmount(event.target.value)}
-                  disabled={isSubmitting}
-                  className="w-full pl-8 pr-4 py-3 text-sm text-(--color-text) placeholder:text-(--color-text-soft) bg-(--color-surface-strong)/70 border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/25 focus:border-(--color-primary) transition-all disabled:opacity-70"
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-semibold text-(--color-text)">
+                  Amount <span className="text-(--color-danger)">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-(--color-text-muted) text-sm">
+                    ₹
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={amount}
+                    onChange={(event) => setAmount(event.target.value)}
+                    disabled={isSubmitting}
+                    className="w-full pl-8 pr-4 py-3 text-sm text-(--color-text) placeholder:text-(--color-text-soft) bg-(--color-surface-strong)/70 border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/25 focus:border-(--color-primary) transition-all disabled:opacity-70"
+                  />
+                </div>
+                {errors.amount && (
+                  <p className="text-xs text-(--color-danger)">
+                    {errors.amount}
+                  </p>
+                )}
               </div>
-              {errors.amount && (
-                <p className="text-xs text-(--color-danger)">{errors.amount}</p>
-              )}
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-semibold text-(--color-text)">
+                  Date & Time <span className="text-(--color-danger)">*</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  value={expenseDate}
+                  onChange={(event) => setExpenseDate(event.target.value)}
+                  disabled={isSubmitting}
+                  className="w-full px-4 py-3 text-sm text-(--color-text) placeholder:text-(--color-text-soft) bg-(--color-surface-strong)/70 border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/25 focus:border-(--color-primary) transition-all disabled:opacity-70"
+                />
+                {errors.expenseDate && (
+                  <p className="text-xs text-(--color-danger)">
+                    {errors.expenseDate}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="flex flex-col gap-1.5">

@@ -40,6 +40,8 @@ export type CreateExpensePayload = {
   paidBy: string;
   splitType: "equal" | "percentage" | "exact";
   participants: { user: string }[];
+   expenseDate: string;
+
 };
 
 export type GroupExpensesResponse = {
