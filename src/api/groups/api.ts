@@ -23,6 +23,8 @@ export type GroupsResponse = {
   groups: Group[];
 };
 
+
+
 export const groupsAPI = {
   async searchMembers(query: string): Promise<User[]> {
     const response = await fetch(

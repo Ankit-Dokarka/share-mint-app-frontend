@@ -12,6 +12,7 @@ import { useGroup } from "../context/groups/GroupsContext";
 import { groupsAPI } from "../api/groups/api";
 import type { User } from "../types/user";
 import { useDebounce } from "../hooks/useDebounce";
+import { useForm } from "react-hook-form";
 
 type AddGroupModalProps = {
   isOpen: boolean;
@@ -21,7 +22,18 @@ type AddGroupModalProps = {
 export default function AddGroupModal({ isOpen, onClose }: AddGroupModalProps) {
   const { createGroup, isCreatingGroup } = useGroup();
 
-  const [groupName, setGroupName] = useState("");
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    reset,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      groupName: "",
+      members: [] as string[],
+    },
+  });
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 300);
   const [searchResults, setSearchResults] = useState<User[]>([]);
@@ -72,15 +84,25 @@ export default function AddGroupModal({ isOpen, onClose }: AddGroupModalProps) {
   }, [debouncedQuery, isOpen]);
 
   const toggleMember = (user: User) => {
-    setSelectedMembers((prev) =>
-      prev.some((m) => m._id === user._id)
+    setSelectedMembers((prev) => {
+      const updated = prev.some((m) => m._id === user._id)
         ? prev.filter((m) => m._id !== user._id)
-        : [...prev, user],
-    );
+        : [...prev, user];
+
+      setValue(
+        "members",
+        updated.map((m) => m._id),
+        {
+          shouldValidate: true,
+        },
+      );
+
+      return updated;
+    });
   };
 
   const handleClose = () => {
-    setGroupName("");
+    reset();
     setQuery("");
     setSearchResults([]);
     setApiError(null);
@@ -88,13 +110,11 @@ export default function AddGroupModal({ isOpen, onClose }: AddGroupModalProps) {
     onClose();
   };
 
-  const handleCreateGroup = async () => {
-    if (!groupName.trim()) return;
-
+  const onSubmit = async (data: { groupName: string; members: string[] }) => {
     try {
       await createGroup({
-        name: groupName.trim(),
-        members: selectedMembers.map((m) => m._id),
+        name: data.groupName.trim(),
+        members: data.members,
       });
       handleClose();
     } catch (error) {
@@ -145,10 +165,33 @@ export default function AddGroupModal({ isOpen, onClose }: AddGroupModalProps) {
               <input
                 type="text"
                 placeholder="e.g. Apartment 4B"
-                value={groupName}
-                onChange={(e) => setGroupName(e.target.value)}
+                {...register("groupName", {
+                  required: "Group name is required",
+                  minLength: {
+                    value: 4,
+                    message: "Group name must be greater than 3 characters",
+                  },
+                })}
                 className="w-full px-4 py-3 text-sm text-(--color-text) placeholder:text-(--color-text-soft) bg-(--color-surface-strong)/70 border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/25 focus:border-(--color-primary) transition-all"
               />
+              {errors.groupName && (
+                <p className="mt-1.5 text-xs text-(--color-danger)">
+                  {errors.groupName.message}
+                </p>
+              )}
+
+              <input
+                type="hidden"
+                {...register("members", {
+                  validate: (val) =>
+                    val.length > 0 || "Please add at least one member",
+                })}
+              />
+              {errors.members && (
+                <p className="mt-1.5 text-xs text-(--color-danger)">
+                  {errors.members.message}
+                </p>
+              )}
             </div>
           </div>
 
@@ -216,10 +259,10 @@ export default function AddGroupModal({ isOpen, onClose }: AddGroupModalProps) {
               {!isSearching &&
                 query.trim().length > 0 &&
                 searchResults.length === 0 && (
-                <div className="flex items-center justify-center text-(--color-text-muted) text-sm py-8">
-                  <p>No users found.</p>
-                </div>
-              )}
+                  <div className="flex items-center justify-center text-(--color-text-muted) text-sm py-8">
+                    <p>No users found.</p>
+                  </div>
+                )}
 
               {!isSearching &&
                 searchResults.map((user) => {
@@ -293,8 +336,8 @@ export default function AddGroupModal({ isOpen, onClose }: AddGroupModalProps) {
             Cancel
           </button>
           <button
-            onClick={handleCreateGroup}
-            disabled={!groupName.trim() || isCreatingGroup}
+            onClick={handleSubmit(onSubmit)}
+            disabled={isCreatingGroup}
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-(--color-primary) hover:bg-(--color-primary-hover) rounded-(--btn-radius) transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isCreatingGroup ? (

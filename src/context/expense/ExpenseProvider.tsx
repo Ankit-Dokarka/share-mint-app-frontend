@@ -14,7 +14,7 @@ type ExpenseProviderProps = {
 export function ExpenseProvider({ children }: ExpenseProviderProps) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [balances, setBalances] = useState<Balance[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
 
   const addExpense = async (payload: CreateExpensePayload) => {
     await expenseAPI.createExpense(payload);
