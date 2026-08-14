@@ -37,6 +37,7 @@ export default function SettleUpModal({
     register,
     handleSubmit,
     reset,
+    trigger,
     formState: { errors, isValid, isSubmitting },
   } = useForm<SettleUpFormValues>({
     mode: "onChange",
@@ -127,6 +128,7 @@ export default function SettleUpModal({
                   disabled={isSubmitting}
                   {...register("receiver", {
                     required: "Please select a user",
+                    onChange: () => trigger("amount"),
                   })}
                   className="w-full px-4 py-3 text-sm text-(--color-text) bg-(--color-surface-strong)/70 border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/25 focus:border-(--color-primary) transition-all disabled:opacity-70"
                 >
@@ -160,11 +162,20 @@ export default function SettleUpModal({
                     disabled={isSubmitting}
                     {...register("amount", {
                       required: "Amount is required",
-                      validate: (val) => {
+                      validate: (val, formValues) => {
                         const num = Number(val);
-                        return (
-                          (!isNaN(num) && num > 0) || "Enter a valid amount"
+                        if (isNaN(num) || num <= 0)
+                          return "Enter a valid amount";
+
+                        const selectedBalance = balances.find(
+                          (b) => b.user._id === formValues.receiver,
                         );
+
+                        if (selectedBalance && num > selectedBalance.balance) {
+                          return "Amount cannot exceed the amount to be paid";
+                        }
+
+                        return true;
                       },
                     })}
                     className="w-full pl-8 pr-4 py-3 text-sm text-(--color-text) placeholder:text-(--color-text-soft) bg-(--color-surface-strong)/70 border border-(--color-border) rounded-(--btn-radius) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/25 focus:border-(--color-primary) transition-all disabled:opacity-70"
