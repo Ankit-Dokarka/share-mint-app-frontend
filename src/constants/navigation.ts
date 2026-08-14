@@ -3,7 +3,7 @@ import {
   FiUsers,
   FiUser,
   FiSettings,
-  FiCreditCard,
+  FiMessageSquare,
 } from "react-icons/fi";
 import type { IconType } from "react-icons";
 
@@ -16,7 +16,7 @@ export type NavItem = {
 export const sidebarNavItems: NavItem[] = [
   { to: "/dashboard", icon: FiHome, label: "Dashboard" },
   { to: "/dashboard/groups", icon: FiUsers, label: "Groups" },
-  { to: "/dashboard/payments", icon: FiCreditCard, label: "Payments" },
+  { to: "/dashboard/chat", icon: FiMessageSquare, label: "Chat" },
   { to: "/dashboard/profile", icon: FiUser, label: "Profile" },
   { to: "/dashboard/settings", icon: FiSettings, label: "Settings" },
 ];
@@ -24,7 +24,7 @@ export const sidebarNavItems: NavItem[] = [
 export const bottomNavItems: NavItem[] = [
   { to: "/dashboard", icon: FiHome, label: "Dashboard" },
   { to: "/dashboard/groups", icon: FiUsers, label: "Groups" },
-  { to: "/dashboard/payments", icon: FiCreditCard, label: "Payments" },
+  { to: "/dashboard/chat", icon: FiMessageSquare, label: "Chat" },
   { to: "/dashboard/profile", icon: FiUser, label: "Profile" },
   { to: "/dashboard/settings", icon: FiSettings, label: "Settings" },
 ];

@@ -13,7 +13,7 @@ import VerificationRoute from "./routes/VerificationRoute";
 
 import GroupDetails from "./pages/GroupDetails";
 import LandingPage from "./pages/LandingPage";
-import Payments from "./pages/Payments";
+import Chat from "./pages/Chat";
 
 export default function App() {
   return (
@@ -31,7 +31,7 @@ export default function App() {
 
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
-            <Route path="payments" element={<Payments />} />
+            <Route path="chat" element={<Chat />} />
 
             <Route path="groups/:groupId" element={<GroupDetails />} />
           </Route>
