@@ -9,7 +9,7 @@ export const connectSocket =()=>{
             autoConnect: false
         })
     }
-    if(!socket.connect()){
+    if(!socket.connected){
         socket.connect()
     }
 
