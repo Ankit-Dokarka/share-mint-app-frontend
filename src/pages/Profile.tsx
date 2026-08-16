@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo, useCallback } from "react";
 import {
   FiMail,
   FiUser,
@@ -12,16 +12,16 @@ import {
 import useAuth from "../context/auth/AuthContext";
 import getName from "../utils/getName";
 import { profileAPI } from "../api/profile/api";
+import type { User } from "../types/auth";
 
 type ToastType = "success" | "error";
 
-const ProfileSkeleton = () => (
+const ProfileSkeleton = memo(() => (
   <div className="max-w-10xl mx-auto flex flex-col gap-8 animate-pulse">
     <div className="flex flex-col gap-2">
       <div className="h-7 w-32 bg-(--color-surface-strong) rounded-md"></div>
       <div className="h-4 w-64 bg-(--color-surface-strong) rounded-md"></div>
     </div>
-
     <div className="bg-(--color-surface) border border-(--color-border) rounded-xl p-6 flex items-center gap-6">
       <div className="w-20 h-20 rounded-full bg-(--color-surface-strong)"></div>
       <div className="flex flex-col gap-2 flex-1">
@@ -30,7 +30,6 @@ const ProfileSkeleton = () => (
       </div>
       <div className="h-9 w-32 bg-(--color-surface-strong) rounded-md"></div>
     </div>
-
     <div className="bg-(--color-surface) border border-(--color-border) rounded-xl p-6 flex flex-col gap-6">
       <div className="h-5 w-40 bg-(--color-surface-strong) rounded-md"></div>
       <div className="flex flex-col gap-2">
@@ -43,11 +42,11 @@ const ProfileSkeleton = () => (
       </div>
     </div>
   </div>
-);
+));
 
-export default function Profile() {
+const Profile = () => {
   const { user } = useAuth();
-  const [profile, setProfile] = useState(user);
+  const [profile, setProfile] = useState<User | null>(user);
   const [isLoading, setIsLoading] = useState(true);
 
   const [fullName, setFullName] = useState("");
@@ -57,6 +56,7 @@ export default function Profile() {
     type: ToastType;
     message: string;
   } | null>(null);
+
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -65,12 +65,7 @@ export default function Profile() {
       try {
         const response = await profileAPI.getProfile();
         if (response.success && response.user) {
-          setProfile({
-            _id: response.user._id,
-            fullName: response.user.fullName,
-            email: response.user.email,
-            avatar: response.user.avatar,
-          });
+          setProfile(response.user);
           setFullName(response.user.fullName);
         }
       } catch (error) {
@@ -79,39 +74,27 @@ export default function Profile() {
         setIsLoading(false);
       }
     };
-
     fetchProfile();
   }, []);
 
-  const showToast = (type: ToastType, message: string) => {
-    if (toastTimerRef.current) {
-      clearTimeout(toastTimerRef.current);
-    }
+  const showToast = useCallback((type: ToastType, message: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToast({ type, message });
-    toastTimerRef.current = setTimeout(() => {
-      setToast(null);
-    }, 3000);
-  };
+    toastTimerRef.current = setTimeout(() => setToast(null), 3000);
+  }, []);
 
   useEffect(() => {
     return () => {
-      if (toastTimerRef.current) {
-        clearTimeout(toastTimerRef.current);
-      }
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     };
   }, []);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     setIsSaving(true);
     try {
       const response = await profileAPI.updateProfile(fullName);
       if (response.success && response.user) {
-        setProfile({
-          _id: response.user._id,
-          fullName: response.user.fullName,
-          email: response.user.email,
-          avatar: response.user.avatar,
-        });
+        setProfile(response.user);
         showToast("success", "Profile updated successfully!");
       }
     } catch (error) {
@@ -122,42 +105,40 @@ export default function Profile() {
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [fullName, showToast]);
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleAvatarChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    setIsUploading(true);
-    try {
-      const response = await profileAPI.updateAvatar(file);
-      if (response.success && response.user) {
-        setProfile((prev) =>
-          prev
-            ? {
-                ...prev,
-                avatar: response.user.avatar,
-              }
-            : prev,
+      setIsUploading(true);
+      try {
+        const response = await profileAPI.updateAvatar(file);
+        if (response.success && response.user) {
+          setProfile((prev) =>
+            prev ? { ...prev, avatar: response.user.avatar } : prev,
+          );
+          showToast("success", "Avatar updated successfully!");
+        }
+      } catch (error) {
+        showToast(
+          "error",
+          error instanceof Error ? error.message : "Failed to upload avatar.",
         );
-        showToast("success", "Avatar updated successfully!");
+      } finally {
+        setIsUploading(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
       }
-    } catch (error) {
-      showToast(
-        "error",
-        error instanceof Error ? error.message : "Failed to upload avatar.",
-      );
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    }
-  };
+    },
+    [showToast],
+  );
 
-  if (isLoading || !profile) {
-    return <ProfileSkeleton />;
-  }
+  const triggerFileInput = useCallback(() => {
+    if (!isUploading) fileInputRef.current?.click();
+  }, [isUploading]);
+
+  if (isLoading || !profile) return <ProfileSkeleton />;
 
   const isSaveDisabled =
     isSaving ||
@@ -166,7 +147,6 @@ export default function Profile() {
 
   return (
     <div className="max-w-10xl mx-auto flex flex-col gap-8">
-      {/* Toast Notification */}
       {toast && (
         <div className="fixed top-20 right-6 z-50 animate-[slideIn_0.3s_ease-out]">
           <div
@@ -186,7 +166,6 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Page Header */}
       <div className="flex flex-col gap-1">
         <h1
           className="text-2xl font-bold text-(--color-text) tracking-tight"
@@ -199,13 +178,11 @@ export default function Profile() {
         </p>
       </div>
 
-      {/* Identity Card */}
       <div className="bg-(--color-surface) border border-(--color-border) rounded-xl p-6 flex flex-col sm:flex-row items-start sm:items-center gap-6">
-        {/* Avatar */}
         <div className="relative shrink-0">
           <div
             className="w-20 h-20 rounded-full bg-(--color-surface-strong) text-(--color-text-soft) flex items-center justify-center text-2xl font-bold border border-(--color-border) overflow-hidden relative group cursor-pointer"
-            onClick={() => !isUploading && fileInputRef.current?.click()}
+            onClick={triggerFileInput}
           >
             {profile.avatar ? (
               <img
@@ -217,11 +194,9 @@ export default function Profile() {
             ) : (
               profile?.email?.[0]?.toUpperCase() || "U"
             )}
-
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
               <FiCamera className="text-white" size={24} />
             </div>
-
             {isUploading && (
               <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white animate-spin rounded-full"></div>
@@ -238,7 +213,6 @@ export default function Profile() {
           />
         </div>
 
-        {/* Info & Action */}
         <div className="flex-1 flex flex-col gap-1">
           <h2 className="text-lg font-bold text-(--color-text)">
             {getName(profile)}
@@ -250,7 +224,7 @@ export default function Profile() {
         </div>
 
         <button
-          onClick={() => fileInputRef.current?.click()}
+          onClick={triggerFileInput}
           disabled={isUploading}
           className="px-4 py-2 border border-(--color-border) text-(--color-text) hover:bg-(--color-surface-strong) hover:border-(--color-text-soft) text-xs font-medium rounded-md transition-colors shadow-sm disabled:opacity-50"
         >
@@ -261,7 +235,6 @@ export default function Profile() {
         </button>
       </div>
 
-      {/* Personal Information Card */}
       <div className="bg-(--color-surface) border border-(--color-border) rounded-xl">
         <div className="p-6 border-b border-(--color-border)">
           <h3 className="text-base font-semibold text-(--color-text)">
@@ -327,4 +300,6 @@ export default function Profile() {
       </div>
     </div>
   );
-}
+};
+
+export default memo(Profile);

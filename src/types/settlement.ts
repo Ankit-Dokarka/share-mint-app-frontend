@@ -15,7 +15,7 @@ export type Settlement = {
 
 export type CreateSettlementPayload = {
   groupId: string;
-  receiver: string; // The user receiving the money
+  receiver: string;
   amount: number;
   note?: string;
 };

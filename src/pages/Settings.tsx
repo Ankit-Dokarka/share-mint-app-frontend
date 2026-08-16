@@ -1,12 +1,11 @@
-import { useState } from "react";
+import { useState, memo, useCallback } from "react";
 
-const Toggle = ({
-  enabled,
-  onChange,
-}: {
+type ToggleProps = {
   enabled: boolean;
   onChange: () => void;
-}) => (
+};
+
+const Toggle = memo(({ enabled, onChange }: ToggleProps) => (
   <button
     type="button"
     onClick={onChange}
@@ -20,14 +19,25 @@ const Toggle = ({
       }`}
     />
   </button>
-);
+));
+Toggle.displayName = "Toggle";
 
-export default function Settings() {
-  const [notifications, setNotifications] = useState({
+type NotificationSettings = {
+  email: boolean;
+  push: boolean;
+  weekly: boolean;
+};
+
+const Settings = () => {
+  const [notifications, setNotifications] = useState<NotificationSettings>({
     email: true,
     push: false,
     weekly: true,
   });
+
+  const handleToggle = useCallback((key: keyof NotificationSettings) => {
+    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
 
   return (
     <div className="max-w-10xl mx-auto flex flex-col gap-6">
@@ -52,12 +62,7 @@ export default function Settings() {
             </div>
             <Toggle
               enabled={notifications.email}
-              onChange={() =>
-                setNotifications({
-                  ...notifications,
-                  email: !notifications.email,
-                })
-              }
+              onChange={() => handleToggle("email")}
             />
           </div>
 
@@ -72,12 +77,7 @@ export default function Settings() {
             </div>
             <Toggle
               enabled={notifications.push}
-              onChange={() =>
-                setNotifications({
-                  ...notifications,
-                  push: !notifications.push,
-                })
-              }
+              onChange={() => handleToggle("push")}
             />
           </div>
 
@@ -92,12 +92,7 @@ export default function Settings() {
             </div>
             <Toggle
               enabled={notifications.weekly}
-              onChange={() =>
-                setNotifications({
-                  ...notifications,
-                  weekly: !notifications.weekly,
-                })
-              }
+              onChange={() => handleToggle("weekly")}
             />
           </div>
         </div>
@@ -171,4 +166,6 @@ export default function Settings() {
       </div>
     </div>
   );
-}
+};
+
+export default memo(Settings);

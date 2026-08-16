@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, memo, useCallback, useMemo } from "react";
 import {
   FiArrowLeft,
   FiSend,
@@ -160,24 +160,104 @@ const DUMMY_CHATS: Chat[] = [
   },
 ];
 
-export default function Chat() {
-  const [chats] = useState<Chat[]>(DUMMY_CHATS);
+// 2. Extracted & Memoized Message Bubble
+const MessageBubble = memo(({ msg }: { msg: Message }) => (
+  <div
+    className={`flex ${msg.sender === "me" ? "justify-end" : "justify-start"}`}
+  >
+    <div
+      className={`max-w-[78%] sm:max-w-[65%] px-3.5 py-2 rounded-(--btn-radius) text-sm ${
+        msg.sender === "me"
+          ? "bg-(--color-primary) text-white rounded-br-sm"
+          : "bg-(--color-surface) border border-(--color-border) text-(--color-text) rounded-bl-sm"
+      }`}
+    >
+      <p className="leading-relaxed">{msg.text}</p>
+      <p
+        className={`mt-1 text-[10px] ${msg.sender === "me" ? "text-white/70" : "text-(--color-text-soft)"}`}
+      >
+        {msg.time}
+      </p>
+    </div>
+  </div>
+));
+MessageBubble.displayName = "MessageBubble";
+
+const ChatListItem = memo(
+  ({
+    chat,
+    isActive,
+    onSelect,
+  }: {
+    chat: Chat;
+    isActive: boolean;
+    onSelect: (id: number) => void;
+  }) => (
+    <button
+      onClick={() => onSelect(chat.id)}
+      className={`w-full flex items-center gap-3 px-4 py-3.5 text-left border-b border-(--color-border)/60 transition-colors ${
+        isActive
+          ? "bg-(--color-primary-soft)/30"
+          : "hover:bg-(--color-surface-strong)/60"
+      }`}
+    >
+      <div className="relative shrink-0">
+        <div
+          className={`flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold ${chat.avatarBg}`}
+        >
+          {chat.isGroup ? <FiUsers size={18} /> : chat.avatar}
+        </div>
+        {chat.online && (
+          <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-(--color-success) border-2 border-(--color-surface)" />
+        )}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-(--color-text) truncate">
+            {chat.name}
+          </h3>
+          <span className="text-xs text-(--color-text-soft) shrink-0">
+            {chat.time}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-2 mt-0.5">
+          <p className="text-xs text-(--color-text-muted) truncate">
+            {chat.lastMessage}
+          </p>
+          {chat.unread > 0 && (
+            <span className="shrink-0 flex h-5 min-w-5 px-1 items-center justify-center rounded-full bg-(--color-primary) text-[10px] font-bold text-white">
+              {chat.unread}
+            </span>
+          )}
+        </div>
+      </div>
+    </button>
+  ),
+);
+ChatListItem.displayName = "ChatListItem";
+
+const Chat = () => {
   const [activeChatId, setActiveChatId] = useState<number | null>(null);
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const activeChat = chats.find((c) => c.id === activeChatId) || null;
+  const activeChat = useMemo(
+    () => DUMMY_CHATS.find((c) => c.id === activeChatId) || null,
+    [activeChatId],
+  );
 
-  // Scroll to bottom when chat changes
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [activeChatId]);
 
-  const handleSend = () => {
+  const handleSend = useCallback(() => {
     if (!input.trim()) return;
-    // Dummy: just clear input (no state update for messages since it's static UI)
     setInput("");
-  };
+  }, [input]);
+
+  const handleSelectChat = useCallback((id: number) => setActiveChatId(id), []);
+  const handleBack = useCallback(() => setActiveChatId(null), []);
 
   return (
     <main className="h-[calc(100vh-0px)] md:h-[calc(100vh-0px)] w-full bg-(--color-bg)">
@@ -185,11 +265,8 @@ export default function Chat() {
         <div className="grid grid-cols-1 md:grid-cols-[340px_1fr] h-full md:h-[calc(100vh-2rem)] rounded-(--btn-radius) overflow-hidden border border-(--color-border) bg-(--color-surface) shadow-lg">
           {/* ===== Chat List Panel ===== */}
           <aside
-            className={`${
-              activeChat ? "hidden md:flex" : "flex"
-            } flex-col w-full h-full border-r border-(--color-border) bg-(--color-surface)`}
+            className={`${activeChat ? "hidden md:flex" : "flex"} flex-col w-full h-full border-r border-(--color-border) bg-(--color-surface)`}
           >
-            {/* List Header */}
             <div className="px-5 py-4 border-b border-(--color-border)">
               <h1
                 className="text-xl font-bold text-(--color-text)"
@@ -197,7 +274,6 @@ export default function Chat() {
               >
                 Chats
               </h1>
-              {/* Search */}
               <div className="mt-3 relative">
                 <FiSearch
                   size={16}
@@ -211,68 +287,27 @@ export default function Chat() {
               </div>
             </div>
 
-            {/* Chat List */}
             <div className="flex-1 overflow-y-auto">
-              {chats.map((chat) => (
-                <button
+              {DUMMY_CHATS.map((chat) => (
+                <ChatListItem
                   key={chat.id}
-                  onClick={() => setActiveChatId(chat.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3.5 text-left border-b border-(--color-border)/60 transition-colors ${
-                    activeChatId === chat.id
-                      ? "bg-(--color-primary-soft)/30"
-                      : "hover:bg-(--color-surface-strong)/60"
-                  }`}
-                >
-                  {/* Avatar */}
-                  <div className="relative shrink-0">
-                    <div
-                      className={`flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold ${chat.avatarBg}`}
-                    >
-                      {chat.isGroup ? <FiUsers size={18} /> : chat.avatar}
-                    </div>
-                    {chat.online && (
-                      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-(--color-success) border-2 border-(--color-surface)" />
-                    )}
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="text-sm font-semibold text-(--color-text) truncate">
-                        {chat.name}
-                      </h3>
-                      <span className="text-xs text-(--color-text-soft) shrink-0">
-                        {chat.time}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between gap-2 mt-0.5">
-                      <p className="text-xs text-(--color-text-muted) truncate">
-                        {chat.lastMessage}
-                      </p>
-                      {chat.unread > 0 && (
-                        <span className="shrink-0 flex h-5 min-w-5 px-1 items-center justify-center rounded-full bg-(--color-primary) text-[10px] font-bold text-white">
-                          {chat.unread}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </button>
+                  chat={chat}
+                  isActive={activeChatId === chat.id}
+                  onSelect={handleSelectChat}
+                />
               ))}
             </div>
           </aside>
 
           {/* ===== Conversation Panel ===== */}
           <section
-            className={`${
-              activeChat ? "flex" : "hidden md:flex"
-            } flex-col w-full h-full bg-(--color-bg)`}
+            className={`${activeChat ? "flex" : "hidden md:flex"} flex-col w-full h-full bg-(--color-bg)`}
           >
             {activeChat ? (
               <>
-                {/* Conversation Header */}
                 <header className="flex items-center gap-3 px-4 py-3 border-b border-(--color-border) bg-(--color-surface)">
                   <button
-                    onClick={() => setActiveChatId(null)}
+                    onClick={handleBack}
                     className="md:hidden flex h-9 w-9 items-center justify-center rounded-full hover:bg-(--color-surface-strong) text-(--color-text) transition-colors"
                   >
                     <FiArrowLeft size={20} />
@@ -315,37 +350,13 @@ export default function Chat() {
                   </div>
                 </header>
 
-                {/* Messages */}
                 <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
                   {activeChat.messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex ${msg.sender === "me" ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        className={`max-w-[78%] sm:max-w-[65%] px-3.5 py-2 rounded-(--btn-radius) text-sm ${
-                          msg.sender === "me"
-                            ? "bg-(--color-primary) text-white rounded-br-sm"
-                            : "bg-(--color-surface) border border-(--color-border) text-(--color-text) rounded-bl-sm"
-                        }`}
-                      >
-                        <p className="leading-relaxed">{msg.text}</p>
-                        <p
-                          className={`mt-1 text-[10px] ${
-                            msg.sender === "me"
-                              ? "text-white/70"
-                              : "text-(--color-text-soft)"
-                          }`}
-                        >
-                          {msg.time}
-                        </p>
-                      </div>
-                    </div>
+                    <MessageBubble key={msg.id} msg={msg} />
                   ))}
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Input */}
                 <div className="px-3 py-3 border-t border-(--color-border) bg-(--color-surface)">
                   <div className="flex items-center gap-2">
                     <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-(--color-surface-strong) text-(--color-text-muted) transition-colors">
@@ -374,7 +385,6 @@ export default function Chat() {
                 </div>
               </>
             ) : (
-              // Empty state on desktop
               <div className="hidden md:flex flex-col items-center justify-center h-full text-center px-6">
                 <div className="flex h-20 w-20 items-center justify-center rounded-full bg-(--color-surface-strong) text-(--color-text-soft) mb-4">
                   <FiSend size={32} />
@@ -396,4 +406,6 @@ export default function Chat() {
       </div>
     </main>
   );
-}
+};
+
+export default memo(Chat);

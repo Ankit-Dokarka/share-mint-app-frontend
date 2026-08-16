@@ -24,12 +24,11 @@ export type Expense = {
   updatedAt: string;
 };
 
-// Backend returns: { user, paid, owes, balance }
 export type Balance = {
   user: UserRef;
   paid: number;
   owes: number;
-  balance: number; // > 0 means to receive, < 0 means to pay
+  balance: number;
 };
 
 export type CreateExpensePayload = {
@@ -40,8 +39,7 @@ export type CreateExpensePayload = {
   paidBy: string;
   splitType: "equal" | "percentage" | "exact";
   participants: { user: string }[];
-   expenseDate: string;
-
+  expenseDate: string;
 };
 
 export type GroupExpensesResponse = {
