@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useCallback, memo, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import {
   FiAlertCircle,
@@ -8,7 +8,7 @@ import {
   FiX,
 } from "react-icons/fi";
 import { expenseAPI } from "../api/expense/api";
-import type { Group } from "../types/groups";
+import type { Group, User } from "../types/groups";
 
 type AddExpenseModalProps = {
   isOpen: boolean;
@@ -44,19 +44,78 @@ const formatExpenseDate = (htmlDate: string): string => {
   return `${day} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
 };
 
-// Helper to get current date/time in local format for the input default value
 const getDefaultDateTime = () => {
   const now = new Date();
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
   return now.toISOString().slice(0, 16);
 };
 
-export default function AddExpenseModal({
+// 2. Extracted & Memoized Participant Item
+const ParticipantItem = memo(
+  ({
+    member,
+    isChecked,
+    isTwoPersonGroup,
+    isSubmitting,
+    onToggle,
+  }: {
+    member: User;
+    isChecked: boolean;
+    isTwoPersonGroup: boolean;
+    isSubmitting: boolean;
+    onToggle: (id: string) => void;
+  }) => (
+    <label
+      className={`flex items-center justify-between gap-3 p-3 rounded-(--btn-radius) border transition-colors ${
+        isChecked
+          ? "bg-(--color-primary-soft) border-(--color-primary)/25"
+          : "border-(--color-border) bg-(--color-surface) hover:border-(--color-primary)/30"
+      } ${isTwoPersonGroup ? "cursor-not-allowed" : "cursor-pointer"}`}
+    >
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="h-9 w-9 rounded-full bg-(--color-primary-soft) text-(--color-primary) text-sm font-bold flex items-center justify-center overflow-hidden">
+          {member.avatar ? (
+            <img
+              src={member.avatar}
+              alt={member.fullName}
+              className="h-full w-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            member.fullName?.[0]?.toUpperCase() || "U"
+          )}
+        </div>
+        <span className="truncate text-sm font-medium text-(--color-text)">
+          {member.fullName}
+        </span>
+      </div>
+      <span
+        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
+          isChecked
+            ? "border-(--color-primary) bg-(--color-primary) text-white"
+            : "border-(--color-border-strong) bg-(--color-surface)"
+        }`}
+      >
+        {isChecked && <FiCheck size={13} />}
+      </span>
+      <input
+        type="checkbox"
+        checked={isChecked || false}
+        disabled={isTwoPersonGroup || isSubmitting}
+        onChange={() => onToggle(member._id)}
+        className="sr-only"
+      />
+    </label>
+  ),
+);
+ParticipantItem.displayName = "ParticipantItem";
+
+const AddExpenseModal = ({
   isOpen,
   onClose,
   group,
   onCreated,
-}: AddExpenseModalProps) {
+}: AddExpenseModalProps) => {
   const members = useMemo(() => group.members ?? [], [group.members]);
   const isTwoPersonGroup = members.length === 2;
 
@@ -70,7 +129,7 @@ export default function AddExpenseModal({
     reset,
     formState: { errors, isValid, isSubmitting },
   } = useForm<ExpenseFormValues>({
-    mode: "onChange", // Validates on change so the button enables immediately when valid
+    mode: "onChange",
     defaultValues: {
       title: "",
       description: "",
@@ -98,49 +157,59 @@ export default function AddExpenseModal({
     }
   }, [isOpen, members, reset]);
 
+  const toggleParticipant = useCallback(
+    (userId: string) => {
+      if (isTwoPersonGroup) return;
+
+      const current = selectedParticipants || [];
+      const updated = current.includes(userId)
+        ? current.filter((id) => id !== userId)
+        : [...current, userId];
+
+      setValue("participants", updated, { shouldValidate: true });
+    },
+    [isTwoPersonGroup, selectedParticipants, setValue],
+  );
+
+  const handleClose = useCallback(() => {
+    if (!isSubmitting) onClose();
+  }, [isSubmitting, onClose]);
+
+  const onSubmit = useCallback(
+    async (data: ExpenseFormValues) => {
+      setApiError(null);
+      try {
+        const participantsPayload = data.participants.map((id) => ({
+          user: id,
+        }));
+        await expenseAPI.createExpense({
+          title: data.title.trim(),
+          description: data.description?.trim() || "",
+          amount: Number(data.amount),
+          groupId: group._id,
+          paidBy: data.paidBy,
+          splitType: "equal",
+          participants: participantsPayload,
+          expenseDate: formatExpenseDate(data.expenseDate),
+        });
+        await onCreated();
+        onClose();
+      } catch (error) {
+        setApiError(
+          error instanceof Error ? error.message : "Failed to add expense",
+        );
+      }
+    },
+    [group._id, onCreated, onClose],
+  );
+
   if (!isOpen) return null;
-
-  const toggleParticipant = (userId: string) => {
-    if (isTwoPersonGroup) return;
-
-    const current = selectedParticipants || [];
-    const updated = current.includes(userId)
-      ? current.filter((id) => id !== userId)
-      : [...current, userId];
-
-    setValue("participants", updated, { shouldValidate: true });
-  };
-
-  const onSubmit = async (data: ExpenseFormValues) => {
-    setApiError(null);
-
-    try {
-      const participantsPayload = data.participants.map((id) => ({ user: id }));
-
-      await expenseAPI.createExpense({
-        title: data.title.trim(),
-        description: data.description?.trim() || "",
-        amount: Number(data.amount),
-        groupId: group._id,
-        paidBy: data.paidBy,
-        splitType: "equal",
-        participants: participantsPayload,
-        expenseDate: formatExpenseDate(data.expenseDate),
-      });
-      await onCreated();
-      onClose();
-    } catch (error) {
-      setApiError(
-        error instanceof Error ? error.message : "Failed to add expense",
-      );
-    }
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={isSubmitting ? undefined : onClose}
+        onClick={handleClose}
       ></div>
 
       <div className="relative z-10 w-full max-w-xl bg-(--color-surface) rounded-(--btn-radius) shadow-lg border border-(--color-border) overflow-hidden max-h-[90vh] flex flex-col">
@@ -159,7 +228,7 @@ export default function AddExpenseModal({
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-(--color-text-muted) hover:text-(--color-text) transition-colors p-1 rounded-(--btn-radius) hover:bg-(--color-bg)"
             aria-label="Close"
             disabled={isSubmitting}
@@ -215,7 +284,6 @@ export default function AddExpenseModal({
 
             {/* Amount & Date Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Amount */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-(--color-text)">
                   Amount <span className="text-(--color-danger)">*</span>
@@ -225,8 +293,8 @@ export default function AddExpenseModal({
                     ₹
                   </span>
                   <input
-                    type="text" // Kept as text to prevent scroll increase
-                    inputMode="decimal" // Shows numeric keyboard on mobile
+                    type="text"
+                    inputMode="decimal"
                     placeholder="0.00"
                     disabled={isSubmitting}
                     {...register("amount", {
@@ -248,7 +316,6 @@ export default function AddExpenseModal({
                 )}
               </div>
 
-              {/* Date & Time */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-(--color-text)">
                   Date & Time <span className="text-(--color-danger)">*</span>
@@ -311,54 +378,18 @@ export default function AddExpenseModal({
                 Participants <span className="text-(--color-danger)">*</span>
               </label>
               <div className="max-h-56 overflow-y-auto grid gap-2 border border-(--color-border) rounded-(--btn-radius) p-2 bg-(--color-surface-strong)/70">
-                {members.map((member) => {
-                  const isChecked = selectedParticipants?.includes(member._id);
-
-                  return (
-                    <label
-                      key={member._id}
-                      className={`flex items-center justify-between gap-3 p-3 rounded-(--btn-radius) border transition-colors ${
-                        isChecked
-                          ? "bg-(--color-primary-soft) border-(--color-primary)/25"
-                          : "border-(--color-border) bg-(--color-surface) hover:border-(--color-primary)/30"
-                      } ${isTwoPersonGroup ? "cursor-not-allowed" : "cursor-pointer"}`}
-                    >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-(--color-primary-soft) text-(--color-primary) text-sm font-bold flex items-center justify-center overflow-hidden">
-                          {member.avatar ? (
-                            <img
-                              src={member.avatar}
-                              alt={member.fullName}
-                              className="h-full w-full object-cover"
-                              referrerPolicy="no-referrer"
-                            />
-                          ) : (
-                            member.fullName?.[0]?.toUpperCase() || "U"
-                          )}
-                        </div>
-                        <span className="truncate text-sm font-medium text-(--color-text)">
-                          {member.fullName}
-                        </span>
-                      </div>
-                      <span
-                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
-                          isChecked
-                            ? "border-(--color-primary) bg-(--color-primary) text-white"
-                            : "border-(--color-border-strong) bg-(--color-surface)"
-                        }`}
-                      >
-                        {isChecked && <FiCheck size={13} />}
-                      </span>
-                      <input
-                        type="checkbox"
-                        checked={isChecked || false}
-                        disabled={isTwoPersonGroup || isSubmitting}
-                        onChange={() => toggleParticipant(member._id)}
-                        className="sr-only"
-                      />
-                    </label>
-                  );
-                })}
+                {members.map((member) => (
+                  <ParticipantItem
+                    key={member._id}
+                    member={member}
+                    isChecked={
+                      selectedParticipants?.includes(member._id) || false
+                    }
+                    isTwoPersonGroup={isTwoPersonGroup}
+                    isSubmitting={isSubmitting}
+                    onToggle={toggleParticipant}
+                  />
+                ))}
               </div>
               {errors.participants && (
                 <p className="text-xs text-(--color-danger)">
@@ -372,7 +403,7 @@ export default function AddExpenseModal({
           <div className="flex justify-end gap-3 p-5 bg-(--color-surface-strong)/50 border-t border-(--color-border) shrink-0">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isSubmitting}
               className="px-4 py-2.5 text-sm font-semibold text-(--color-text) bg-(--color-surface) border border-(--color-border) rounded-(--btn-radius) hover:bg-(--color-surface-strong) transition-colors shadow-sm disabled:opacity-70"
             >
@@ -385,8 +416,7 @@ export default function AddExpenseModal({
             >
               {isSubmitting ? (
                 <>
-                  <FiLoader className="animate-spin" size={14} />
-                  Adding...
+                  <FiLoader className="animate-spin" size={14} /> Adding...
                 </>
               ) : (
                 "Add Expense"
@@ -397,4 +427,6 @@ export default function AddExpenseModal({
       </div>
     </div>
   );
-}
+};
+
+export default memo(AddExpenseModal);

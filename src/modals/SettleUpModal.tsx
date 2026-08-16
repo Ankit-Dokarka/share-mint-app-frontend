@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, memo } from "react";
 import { useForm } from "react-hook-form";
 import { FiX, FiAlertCircle, FiLoader, FiCheckCircle } from "react-icons/fi";
 import { settlementAPI } from "../api/settlement/api";
@@ -19,13 +19,16 @@ type SettleUpFormValues = {
   note?: string;
 };
 
-export default function SettleUpModal({
+const formatINR = (val: number) =>
+  `₹${val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const SettleUpModal = ({
   isOpen,
   onClose,
   groupId,
   balances,
   onSettled,
-}: SettleUpModalProps) {
+}: SettleUpModalProps) => {
   const { user } = useAuth();
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -41,48 +44,46 @@ export default function SettleUpModal({
     formState: { errors, isValid, isSubmitting },
   } = useForm<SettleUpFormValues>({
     mode: "onChange",
-    defaultValues: {
-      receiver: "",
-      amount: "",
-      note: "",
-    },
+    defaultValues: { receiver: "", amount: "", note: "" },
   });
 
   useEffect(() => {
     if (isOpen) {
-      reset({
-        receiver: "",
-        amount: "",
-        note: "",
-      });
+      reset({ receiver: "", amount: "", note: "" });
       setApiError(null);
     }
   }, [isOpen, reset]);
 
+  const handleClose = useCallback(() => {
+    if (!isSubmitting) onClose();
+  }, [isSubmitting, onClose]);
+
+  const onSubmit = useCallback(
+    async (data: SettleUpFormValues) => {
+      setApiError(null);
+      try {
+        await settlementAPI.createSettlement({
+          groupId,
+          receiver: data.receiver,
+          amount: Number(data.amount),
+          note: data.note?.trim() || "",
+        });
+        await onSettled();
+        onClose();
+      } catch (err) {
+        setApiError(err instanceof Error ? err.message : "Failed to settle up");
+      }
+    },
+    [groupId, onSettled, onClose],
+  );
+
   if (!isOpen) return null;
-
-  const onSubmit = async (data: SettleUpFormValues) => {
-    setApiError(null);
-
-    try {
-      await settlementAPI.createSettlement({
-        groupId,
-        receiver: data.receiver,
-        amount: Number(data.amount),
-        note: data.note?.trim() || "",
-      });
-      await onSettled();
-      onClose();
-    } catch (err) {
-      setApiError(err instanceof Error ? err.message : "Failed to settle up");
-    }
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={isSubmitting ? undefined : onClose}
+        onClick={handleClose}
       ></div>
 
       <div className="relative z-10 w-full max-w-md bg-(--color-surface) rounded-(--btn-radius) shadow-lg border border-(--color-border) overflow-hidden max-h-[90vh] flex flex-col">
@@ -94,7 +95,7 @@ export default function SettleUpModal({
             <h3 className="text-lg font-bold text-(--color-text)">Settle Up</h3>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-(--color-text-muted) hover:text-(--color-text) p-1 rounded-(--btn-radius) hover:bg-(--color-bg)"
             disabled={isSubmitting}
           >
@@ -204,7 +205,7 @@ export default function SettleUpModal({
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={handleClose}
                   disabled={isSubmitting}
                   className="px-4 py-2.5 text-sm font-semibold text-(--color-text) bg-(--color-surface) border border-(--color-border) rounded-(--btn-radius) hover:bg-(--color-surface-strong) transition-colors shadow-sm disabled:opacity-70"
                 >
@@ -230,7 +231,6 @@ export default function SettleUpModal({
       </div>
     </div>
   );
-}
+};
 
-const formatINR = (val: number) =>
-  `₹${val.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+export default memo(SettleUpModal);

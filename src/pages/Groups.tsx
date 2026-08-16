@@ -1,12 +1,134 @@
-import { useState } from "react";
+import { useState, memo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { FiAlertCircle, FiArrowRight, FiPlus, FiUsers } from "react-icons/fi";
 import AddGroupModal from "../modals/AddGroupModal";
 import { useGroup } from "../context/groups/GroupsContext";
+import type { Group } from "../types/groups";
 
-export default function Groups() {
+const GroupCard = memo(({ group }: { group: Group }) => (
+  <Link
+    to={`/dashboard/groups/${group._id}`}
+    className="group bg-(--color-surface) border border-(--color-border) rounded-(--btn-radius) p-5 shadow-sm hover:shadow-md hover:border-(--color-primary)/40 transition-all"
+  >
+    <div className="flex items-start justify-between gap-4">
+      <div className="w-11 h-11 rounded-(--btn-radius) bg-(--color-primary-soft) text-(--color-primary) flex items-center justify-center shrink-0">
+        <FiUsers size={20} />
+      </div>
+      <FiArrowRight
+        size={18}
+        className="text-(--color-text-soft) transition-transform group-hover:translate-x-1 group-hover:text-(--color-primary)"
+      />
+    </div>
+
+    <div className="mt-5">
+      <h2 className="truncate text-lg font-bold text-(--color-text)">
+        {group.name}
+      </h2>
+      <p className="mt-1 text-xs text-(--color-text-muted)">
+        {group.members.length}{" "}
+        {group.members.length === 1 ? "member" : "members"}
+      </p>
+    </div>
+
+    <div className="mt-5 flex items-center justify-between gap-4">
+      <div className="flex -space-x-2">
+        {group.members.slice(0, 4).map((member) => (
+          <div
+            key={member._id}
+            className="h-8 w-8 rounded-full border-2 border-(--color-surface) bg-(--color-surface-strong) text-[11px] font-bold text-(--color-text-muted) flex items-center justify-center overflow-hidden"
+            title={member.fullName}
+          >
+            {member.avatar ? (
+              <img
+                src={member.avatar}
+                alt={member.fullName}
+                className="h-full w-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              member.fullName?.[0]?.toUpperCase() || "U"
+            )}
+          </div>
+        ))}
+        {group.members.length > 4 && (
+          <div className="h-8 w-8 rounded-full border-2 border-(--color-surface) bg-(--color-text) text-[11px] font-bold text-(--color-bg) flex items-center justify-center">
+            +{group.members.length - 4}
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 text-right">
+        <p className="text-[11px] font-semibold uppercase text-(--color-text-soft)">
+          Balances
+        </p>
+        <p className="mt-1 truncate text-sm font-bold text-(--color-text-muted)">
+          View details
+        </p>
+      </div>
+    </div>
+  </Link>
+));
+GroupCard.displayName = "GroupCard";
+
+const GroupCardSkeleton = () => (
+  <div className="h-48 animate-pulse rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface) p-5 shadow-sm">
+    <div className="flex justify-between">
+      <div className="h-11 w-11 rounded-(--btn-radius) bg-(--color-surface-strong)"></div>
+      <div className="h-5 w-5 bg-(--color-surface-strong)"></div>
+    </div>
+    <div className="mt-6 h-5 w-2/3 rounded bg-(--color-surface-strong)"></div>
+    <div className="mt-3 h-3 w-1/3 rounded bg-(--color-surface-strong)"></div>
+    <div className="mt-8 flex items-center justify-between">
+      <div className="flex gap-2">
+        <div className="h-8 w-8 rounded-full bg-(--color-surface-strong)"></div>
+        <div className="h-8 w-8 rounded-full bg-(--color-surface-strong)"></div>
+      </div>
+      <div className="h-8 w-12 rounded bg-(--color-surface-strong)"></div>
+    </div>
+  </div>
+);
+
+const StateMessage = memo(
+  ({
+    isError,
+    icon,
+    title,
+    message,
+    action,
+  }: {
+    isError?: boolean;
+    icon: React.ReactNode;
+    title: string;
+    message: string;
+    action?: React.ReactNode;
+  }) => (
+    <div
+      className={`flex min-h-120 flex-col items-center justify-center text-center py-20 px-6 bg-(--color-surface) border border-dashed rounded-(--btn-radius) shadow-sm ${
+        isError ? "border-(--color-danger)" : "border-(--color-border-strong)"
+      }`}
+    >
+      <div
+        className={`w-18 h-18 flex items-center justify-center rounded-full mb-5 ${
+          isError ? "bg-(--color-danger-soft)" : "bg-(--color-primary-soft)"
+        }`}
+      >
+        {icon}
+      </div>
+      <h2 className="text-xl font-bold text-(--color-text) mb-2">{title}</h2>
+      <p className="max-w-md text-sm leading-6 text-(--color-text-muted)">
+        {message}
+      </p>
+      {action}
+    </div>
+  ),
+);
+StateMessage.displayName = "StateMessage";
+
+const Groups = () => {
   const { groups, isLoadingGroups, groupsError } = useGroup();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  const handleOpenModal = useCallback(() => setIsCreateOpen(true), []);
+  const handleCloseModal = useCallback(() => setIsCreateOpen(false), []);
 
   return (
     <>
@@ -22,7 +144,7 @@ export default function Groups() {
           </div>
           <button
             type="button"
-            onClick={() => setIsCreateOpen(true)}
+            onClick={handleOpenModal}
             className="flex items-center justify-center gap-2 px-4 py-2.5 bg-(--color-primary) hover:bg-(--color-primary-hover) text-white text-sm font-semibold rounded-(--btn-radius) transition-colors shadow-sm"
           >
             <FiPlus size={16} /> Create Group
@@ -32,131 +154,43 @@ export default function Groups() {
         {isLoadingGroups ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div
-                key={i}
-                className="h-48 animate-pulse rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface) p-5 shadow-sm"
-              >
-                <div className="flex justify-between">
-                  <div className="h-11 w-11 rounded-(--btn-radius) bg-(--color-surface-strong)"></div>
-                  <div className="h-5 w-5 bg-(--color-surface-strong)"></div>
-                </div>
-                <div className="mt-6 h-5 w-2/3 rounded bg-(--color-surface-strong)"></div>
-                <div className="mt-3 h-3 w-1/3 rounded bg-(--color-surface-strong)"></div>
-                <div className="mt-8 flex items-center justify-between">
-                  <div className="flex gap-2">
-                    <div className="h-8 w-8 rounded-full bg-(--color-surface-strong)"></div>
-                    <div className="h-8 w-8 rounded-full bg-(--color-surface-strong)"></div>
-                  </div>
-                  <div className="h-8 w-12 rounded bg-(--color-surface-strong)"></div>
-                </div>
-              </div>
+              <GroupCardSkeleton key={i} />
             ))}
           </div>
         ) : groupsError ? (
-          <div className="flex min-h-120 flex-col items-center justify-center text-center py-20 px-6 bg-(--color-surface) border border-dashed border-(--color-danger) rounded-(--btn-radius) shadow-sm">
-            <div className="w-18 h-18 flex items-center justify-center rounded-full bg-(--color-danger-soft) mb-5">
-              <FiAlertCircle size={28} className="text-(--color-danger)" />
-            </div>
-            <h2 className="text-xl font-bold text-(--color-text) mb-2">
-              Failed to load groups
-            </h2>
-            <p className="max-w-md text-sm leading-6 text-(--color-text-muted)">
-              {groupsError}
-            </p>
-          </div>
+          <StateMessage
+            isError
+            icon={<FiAlertCircle size={28} className="text-(--color-danger)" />}
+            title="Failed to load groups"
+            message={groupsError}
+          />
         ) : groups.length === 0 ? (
-          <div className="flex min-h-120 flex-col items-center justify-center text-center py-20 px-6 bg-(--color-surface) border border-dashed border-(--color-border-strong) rounded-(--btn-radius) shadow-sm">
-            <div className="w-18 h-18 flex items-center justify-center rounded-full bg-(--color-primary-soft) mb-5">
-              <FiUsers size={28} className="text-(--color-primary)" />
-            </div>
-            <h2 className="text-xl font-bold text-(--color-text) mb-2">
-              No groups created yet
-            </h2>
-            <p className="max-w-md text-sm leading-6 text-(--color-text-muted)">
-              Start with a home, trip, team, or dinner group and keep shared
-              expenses organized from the first entry.
-            </p>
-            <button
-              type="button"
-              onClick={() => setIsCreateOpen(true)}
-              className="mt-6 flex items-center justify-center gap-2 px-4 py-2.5 bg-(--color-primary) hover:bg-(--color-primary-hover) text-white text-sm font-semibold rounded-(--btn-radius) transition-colors shadow-sm"
-            >
-              <FiPlus size={16} /> Create Group
-            </button>
-          </div>
+          <StateMessage
+            icon={<FiUsers size={28} className="text-(--color-primary)" />}
+            title="No groups created yet"
+            message="Start with a home, trip, team, or dinner group and keep shared expenses organized from the first entry."
+            action={
+              <button
+                type="button"
+                onClick={handleOpenModal}
+                className="mt-6 flex items-center justify-center gap-2 px-4 py-2.5 bg-(--color-primary) hover:bg-(--color-primary-hover) text-white text-sm font-semibold rounded-(--btn-radius) transition-colors shadow-sm"
+              >
+                <FiPlus size={16} /> Create Group
+              </button>
+            }
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {groups.map((group) => (
-              <Link
-                key={group._id}
-                to={`/dashboard/groups/${group._id}`}
-                className="group bg-(--color-surface) border border-(--color-border) rounded-(--btn-radius) p-5 shadow-sm hover:shadow-md hover:border-(--color-primary)/40 transition-all"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="w-11 h-11 rounded-(--btn-radius) bg-(--color-primary-soft) text-(--color-primary) flex items-center justify-center shrink-0">
-                    <FiUsers size={20} />
-                  </div>
-                  <FiArrowRight
-                    size={18}
-                    className="text-(--color-text-soft) transition-transform group-hover:translate-x-1 group-hover:text-(--color-primary)"
-                  />
-                </div>
-
-                <div className="mt-5">
-                  <h2 className="truncate text-lg font-bold text-(--color-text)">
-                    {group.name}
-                  </h2>
-                  <p className="mt-1 text-xs text-(--color-text-muted)">
-                    {group.members.length}{" "}
-                    {group.members.length === 1 ? "member" : "members"}
-                  </p>
-                </div>
-
-                <div className="mt-5 flex items-center justify-between gap-4">
-                  <div className="flex -space-x-2">
-                    {group.members.slice(0, 4).map((member) => (
-                      <div
-                        key={member._id}
-                        className="h-8 w-8 rounded-full border-2 border-(--color-surface) bg-(--color-surface-strong) text-[11px] font-bold text-(--color-text-muted) flex items-center justify-center overflow-hidden"
-                        title={member.fullName}
-                      >
-                        {member.avatar ? (
-                          <img
-                            src={member.avatar}
-                            alt={member.fullName}
-                            className="h-full w-full object-cover"
-                            referrerPolicy="no-referrer"
-                          />
-                        ) : (
-                          member.fullName?.[0]?.toUpperCase() || "U"
-                        )}
-                      </div>
-                    ))}
-                    {group.members.length > 4 && (
-                      <div className="h-8 w-8 rounded-full border-2 border-(--color-surface) bg-(--color-text) text-[11px] font-bold text-(--color-bg) flex items-center justify-center">
-                        +{group.members.length - 4}
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0 text-right">
-                    <p className="text-[11px] font-semibold uppercase text-(--color-text-soft)">
-                      Balances
-                    </p>
-                    <p className="mt-1 truncate text-sm font-bold text-(--color-text-muted)">
-                      View details
-                    </p>
-                  </div>
-                </div>
-              </Link>
+              <GroupCard key={group._id} group={group} />
             ))}
           </div>
         )}
       </section>
 
-      <AddGroupModal
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-      />
+      <AddGroupModal isOpen={isCreateOpen} onClose={handleCloseModal} />
     </>
   );
-}
+};
+
+export default memo(Groups);
