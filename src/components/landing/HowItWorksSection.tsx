@@ -1,47 +1,58 @@
-import { useLayoutEffect, useRef } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
+import { useEffect, useRef } from "react";
 
 export default function HowItWorksSection() {
-  const sectionRef = useRef(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
 
-  useLayoutEffect(() => {
-    const ctx = gsap.context(() => {
-      // Draw the timeline line as the user scrolls
-      gsap.to(".timeline-line-fill", {
-        scaleY: 1,
-        ease: "none",
-        scrollTrigger: {
-          trigger: ".timeline-container",
-          start: "top 70%",
-          end: "bottom 70%",
-          scrub: 1,
-        },
-      });
+  useEffect(() => {
+    let ctx: gsap.Context;
+    let isMounted = true;
 
-      // Animate steps in as they enter viewport
-      gsap.utils.toArray<HTMLElement>(".timeline-step").forEach((step) => {
-        gsap.fromTo(
-          step,
-          { opacity: 0, y: 50 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.8,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: step,
-              start: "top 85%",
-              toggleActions: "play none none none",
-            },
+    const initAnimations = async () => {
+      const { default: gsap } = await import("gsap");
+      const { ScrollTrigger } = await import("gsap/ScrollTrigger");
+
+      if (!isMounted) return;
+
+      gsap.registerPlugin(ScrollTrigger);
+
+      ctx = gsap.context(() => {
+        gsap.to(".timeline-line-fill", {
+          scaleY: 1,
+          ease: "none",
+          scrollTrigger: {
+            trigger: ".timeline-container",
+            start: "top 70%",
+            end: "bottom 70%",
+            scrub: 1,
           },
-        );
-      });
-    }, sectionRef);
+        });
 
-    return () => ctx.revert();
+        gsap.utils.toArray<HTMLElement>(".timeline-step").forEach((step) => {
+          gsap.fromTo(
+            step,
+            { opacity: 0, y: 50 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.8,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: step,
+                start: "top 85%",
+                toggleActions: "play none none none",
+              },
+            },
+          );
+        });
+      }, sectionRef);
+    };
+
+    initAnimations();
+
+    return () => {
+      isMounted = false;
+      if (ctx) ctx.revert();
+    };
   }, []);
 
   const steps = [
@@ -140,7 +151,6 @@ export default function HowItWorksSection() {
                       </p>
                     </div>
 
-                    {/* Image Card */}
                     <div
                       className={`pl-12 md:pl-0 ${isLeft ? "md:pl-16" : "md:pr-16"} md:[direction:ltr]`}
                     >
@@ -149,6 +159,9 @@ export default function HowItWorksSection() {
                           src={step.image}
                           alt={step.title}
                           className="rounded-xl w-full h-48 object-cover"
+                          loading="lazy"
+                          width={600}
+                          height={192}
                         />
                       </div>
                     </div>

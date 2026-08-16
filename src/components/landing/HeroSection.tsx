@@ -1,58 +1,137 @@
-import { useLayoutEffect, useRef } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useEffect, useRef, memo } from "react";
 import { FiArrowRight } from "react-icons/fi";
 import { Link } from "react-router-dom";
 
-gsap.registerPlugin(ScrollTrigger);
+const floatingCardsData = [
+  {
+    src: "/image-1.png",
+    alt: "Wallet App",
+    side: "left",
+    classes: "top-[12%] left-[5%] w-48 -rotate-6 z-10",
+  },
+  {
+    src: "/image-2.png",
+    alt: "Analytics Dashboard",
+    side: "left",
+    classes: "top-[33%] left-[1%] w-64 rotate-3 z-30",
+  },
+  {
+    src: "/image-3.png",
+    alt: "Mobile Payment",
+    side: "left",
+    classes: "bottom-[24%] left-[8%] w-44 -rotate-12 z-10",
+  },
+  {
+    src: "/image-4.png",
+    alt: "Finance Chart",
+    side: "right",
+    classes: "top-[12%] right-[5%] w-48 rotate-6 z-10",
+  },
+  {
+    src: "/image-5.png",
+    alt: "Expense Calculator",
+    side: "right",
+    classes: "top-[33%] right-[1%] w-64 -rotate-3 z-30",
+  },
+  {
+    src: "/image-6.png",
+    alt: "Transaction History",
+    side: "right",
+    classes: "bottom-[24%] right-[8%] w-44 rotate-12 z-10",
+  },
+];
+
+const FloatingCard = memo(
+  ({
+    src,
+    alt,
+    side,
+    classes,
+  }: {
+    src: string;
+    alt: string;
+    side: string;
+    classes: string;
+  }) => (
+    <div
+      className={`floating-card ${side}-card hidden lg:block absolute ${classes}`}
+    >
+      <div className="bg-(--color-surface)/90 backdrop-blur-sm border border-(--color-border) rounded-2xl p-1.5 shadow-2xl">
+        <img
+          src={src}
+          alt={alt}
+          className="rounded-xl w-full h-auto object-cover aspect-4/3"
+          loading="lazy"
+          width={400}
+          height={300}
+        />
+      </div>
+    </div>
+  ),
+);
+FloatingCard.displayName = "FloatingCard";
 
 export default function HeroSection() {
-  const main = useRef(null);
+  const main = useRef<HTMLElement>(null);
 
-  useLayoutEffect(() => {
-    const ctx = gsap.context(() => {
-      const cards = gsap.utils.toArray<HTMLElement>(".floating-card");
+  useEffect(() => {
+    let ctx: gsap.Context;
+    let isMounted = true;
 
-      // 1. Set initial hidden state
-      gsap.set(cards, { opacity: 0, y: 60, scale: 0.9 });
+    const initAnimations = async () => {
+      const { default: gsap } = await import("gsap");
+      const { ScrollTrigger } = await import("gsap/ScrollTrigger");
 
-      // 2. Entrance Animation
-      gsap.to(cards, {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 1.2,
-        stagger: 0.15,
-        ease: "power3.out",
-        delay: 0.3,
-      });
+      if (!isMounted) return;
 
-      // 3. Scroll Animation with explicit fromTo and immediateRender: false
-      cards.forEach((card) => {
-        const isLeft = card.classList.contains("left-card");
+      gsap.registerPlugin(ScrollTrigger);
 
-        gsap.fromTo(
-          card,
-          { x: 0, y: 0, opacity: 1, scale: 1 }, // Explicit "visible" state to return to on scroll up
-          {
-            x: isLeft ? -120 : 120,
-            y: 80,
-            opacity: 0,
-            scale: 0.85,
-            ease: "none",
-            immediateRender: false, // Prevents overriding the entrance animation
-            scrollTrigger: {
-              trigger: ".hero-section",
-              start: "top top",
-              end: "bottom center",
-              scrub: 1,
+      ctx = gsap.context(() => {
+        const cards = gsap.utils.toArray<HTMLElement>(".floating-card");
+
+        gsap.set(cards, { opacity: 0, y: 60, scale: 0.9 });
+
+        gsap.to(cards, {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 1.2,
+          stagger: 0.15,
+          ease: "power3.out",
+          delay: 0.3,
+        });
+
+        cards.forEach((card) => {
+          const isLeft = card.classList.contains("left-card");
+
+          gsap.fromTo(
+            card,
+            { x: 0, y: 0, opacity: 1, scale: 1 },
+            {
+              x: isLeft ? -120 : 120,
+              y: 80,
+              opacity: 0,
+              scale: 0.85,
+              ease: "none",
+              immediateRender: false,
+              scrollTrigger: {
+                trigger: ".hero-section",
+                start: "top top",
+                end: "bottom center",
+                scrub: 1,
+              },
             },
-          },
-        );
-      });
-    }, main);
+          );
+        });
+      }, main);
+    };
 
-    return () => ctx.revert();
+    initAnimations();
+
+    return () => {
+      isMounted = false;
+      if (ctx) ctx.revert();
+    };
   }, []);
 
   return (
@@ -60,10 +139,8 @@ export default function HeroSection() {
       ref={main}
       className="hero-section relative min-h-screen flex flex-col items-center justify-center pt-32 pb-20 px-4 overflow-hidden"
     >
-      {/* Ambient background glow */}
       <div className="pointer-events-none absolute top-20 left-1/2 -translate-x-1/2 w-200 h-200 bg-(--color-primary)/5 rounded-full blur-[120px] z-0"></div>
 
-      {/* Center Content */}
       <div className="relative z-20 text-center max-w-3xl mx-auto flex flex-col items-center">
         <h1
           className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tighter text-(--color-text) mb-8"
@@ -94,69 +171,16 @@ export default function HeroSection() {
         </div>
       </div>
 
-      {/* Floating Visual Elements (Left Side) */}
-      <div className="floating-card left-card hidden lg:block absolute top-[12%] left-[5%] w-48 -rotate-6 z-10">
-        <div className="bg-(--color-surface)/90 backdrop-blur-sm border border-(--color-border) rounded-2xl p-1.5 shadow-2xl">
-          <img
-            src="/image-1.png"
-            alt="Wallet App"
-            className="rounded-xl w-full h-auto object-cover aspect-4/3"
-          />
-        </div>
-      </div>
+      {floatingCardsData.map((card, index) => (
+        <FloatingCard
+          key={index}
+          src={card.src}
+          alt={card.alt}
+          side={card.side}
+          classes={card.classes}
+        />
+      ))}
 
-      <div className="floating-card left-card hidden lg:block absolute top-[33%] left-[1%] w-64 rotate-3 z-30">
-        <div className="bg-(--color-surface)/90 backdrop-blur-sm border border-(--color-border) rounded-2xl p-1.5 shadow-2xl">
-          <img
-            src="/image-2.png"
-            alt="Analytics Dashboard"
-            className="rounded-xl w-full h-auto object-cover aspect-4/3"
-          />
-        </div>
-      </div>
-
-      <div className="floating-card left-card hidden lg:block absolute bottom-[24%] left-[8%] w-44 -rotate-12 z-10">
-        <div className="bg-(--color-surface)/90 backdrop-blur-sm border border-(--color-border) rounded-2xl p-1.5 shadow-2xl">
-          <img
-            src="/image-3.png"
-            alt="Mobile Payment"
-            className="rounded-xl w-full h-auto object-cover aspect-4/3"
-          />
-        </div>
-      </div>
-
-      {/* Floating Visual Elements (Right Side) */}
-      <div className="floating-card right-card hidden lg:block absolute top-[12%] right-[5%] w-48 rotate-6 z-10">
-        <div className="bg-(--color-surface)/90 backdrop-blur-sm border border-(--color-border) rounded-2xl p-1.5 shadow-2xl">
-          <img
-            src="/image-4.png"
-            alt="Finance Chart"
-            className="rounded-xl w-full h-auto object-cover aspect-4/3"
-          />
-        </div>
-      </div>
-
-      <div className="floating-card right-card hidden lg:block absolute top-[33%] right-[1%] w-64 -rotate-3 z-30">
-        <div className="bg-(--color-surface)/90 backdrop-blur-sm border border-(--color-border) rounded-2xl p-1.5 shadow-2xl">
-          <img
-            src="/image-5.png"
-            alt="Expense Calculator"
-            className="rounded-xl w-full h-auto object-cover aspect-4/3"
-          />
-        </div>
-      </div>
-
-      <div className="floating-card right-card hidden lg:block absolute bottom-[24%] right-[8%] w-44 rotate-12 z-10">
-        <div className="bg-(--color-surface)/90 backdrop-blur-sm border border-(--color-border) rounded-2xl p-1.5 shadow-2xl">
-          <img
-            src="/image-6.png"
-            alt="Transaction History"
-            className="rounded-xl w-full h-auto object-cover aspect-4/3"
-          />
-        </div>
-      </div>
-
-      {/* Social Proof / Trusted By */}
       <div className="relative z-20 mt-32 w-full max-w-4xl mx-auto text-center">
         <p className="text-xs font-medium uppercase tracking-widest text-(--color-text-soft) mb-8">
           Perfect for managing shared finances for
