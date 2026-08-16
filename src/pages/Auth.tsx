@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import useAuth from "../context/auth/AuthContext";
@@ -11,7 +11,11 @@ import {
   FiEye,
   FiEyeOff,
 } from "react-icons/fi";
-import { useForm } from "react-hook-form";
+import {
+  useForm,
+  type UseFormRegister,
+  type RegisterOptions,
+} from "react-hook-form";
 
 type FormData = {
   fullName?: string;
@@ -19,35 +23,88 @@ type FormData = {
   password: string;
 };
 
+const FormInput = memo(
+  ({
+    id,
+    label,
+    type,
+    icon,
+    placeholder,
+    validation,
+    register,
+    error,
+    showPasswordToggle,
+    showPassword,
+    onTogglePassword,
+  }: {
+    id: keyof FormData;
+    label: string;
+    type: string;
+    icon: React.ReactNode;
+    placeholder: string;
+
+    validation: RegisterOptions<FormData>;
+    register: UseFormRegister<FormData>;
+    error?: string;
+    showPasswordToggle?: boolean;
+    showPassword?: boolean;
+    onTogglePassword?: () => void;
+  }) => (
+    <div className="flex flex-col gap-1.5">
+      <label
+        htmlFor={id}
+        className="text-xs font-medium text-(--color-text-muted)"
+      >
+        {label}
+      </label>
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-(--color-text-muted)">
+          {icon}
+        </span>
+        <input
+          id={id}
+          type={type}
+          placeholder={placeholder}
+          {...register(id, validation)}
+          className="w-full pl-9 pr-9 py-2.5 text-sm rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text) placeholder:text-(--color-text-soft) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/30 focus:border-(--color-primary) transition-all"
+        />
+        {showPasswordToggle && (
+          <button
+            type="button"
+            onClick={onTogglePassword}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-(--color-text-muted) hover:text-(--color-text) transition-colors focus:outline-none"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+          </button>
+        )}
+      </div>
+      {error && <p className="text-xs text-(--color-danger)">{error}</p>}
+    </div>
+  ),
+);
+FormInput.displayName = "FormInput";
+
 export default function AuthPage() {
   const navigate = useNavigate();
-  const { googleLogin, login, register, error, clearError } = useAuth();
-  const buttonWrapperRef = useRef<HTMLDivElement>(null);
-  const [isButtonReady, setIsButtonReady] = useState(false);
+  const {
+    googleLogin,
+    login,
+    register: registerUser,
+    error,
+    clearError,
+  } = useAuth();
+
   const [isLogin, setIsLogin] = useState(true);
-  
-  
   const [isLoading, setIsLoading] = useState(false);
- 
   const [showPassword, setShowPassword] = useState(false);
 
   const {
-    register: registerField,
+    register,
     handleSubmit,
     formState: { errors },
     reset,
   } = useForm<FormData>();
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const wrapper = buttonWrapperRef.current;
-      if (wrapper && wrapper.innerHTML.length > 50) {
-        setIsButtonReady(true);
-        clearInterval(interval);
-      }
-    }, 100);
-    return () => clearInterval(interval);
-  }, []);
 
   const handleGoogleSuccess = async (
     credentialResponse: CredentialResponse,
@@ -60,14 +117,18 @@ export default function AuthPage() {
 
   const onSubmit = async (data: FormData) => {
     clearError();
-    setIsLoading(true); 
+    setIsLoading(true);
     try {
       if (isLogin) {
         const success = await login(data.email, data.password);
         if (success) navigate("/dashboard");
       } else {
         if (!data.fullName) return;
-        const success = await register(data.fullName, data.email, data.password);
+        const success = await registerUser(
+          data.fullName,
+          data.email,
+          data.password,
+        );
         if (success) {
           navigate("/verify-email", {
             state: { email: data.email, fromSignup: true },
@@ -75,7 +136,7 @@ export default function AuthPage() {
         }
       }
     } finally {
-      setIsLoading(false); 
+      setIsLoading(false);
     }
   };
 
@@ -83,8 +144,26 @@ export default function AuthPage() {
     if (isLoading) return;
     clearError();
     reset();
-    setShowPassword(false); 
+    setShowPassword(false);
     setIsLogin((prev) => !prev);
+  };
+
+  const passwordValidation: RegisterOptions<FormData> = {
+    required: "Password is required",
+    validate: (value) => {
+      if (!value) return "Password is required";
+
+      if (value.length < 6)
+        return "Password must be at least 6 characters long";
+      if (!isLogin) {
+        if (!/[A-Z]/.test(value))
+          return "Must contain at least one uppercase letter";
+        if (!/\d/.test(value)) return "Must contain at least one digit";
+        if (!/[^a-zA-Z0-9]/.test(value))
+          return "Must contain at least one symbol";
+      }
+      return true;
+    },
   };
 
   return (
@@ -127,9 +206,9 @@ export default function AuthPage() {
             </p>
           </div>
 
-          {/* Error Display */}
           <div
             className={`grid w-full transition-all duration-300 ease-in-out ${error ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+            aria-live="assertive"
           >
             <div className="overflow-hidden flex items-center justify-center gap-2">
               <FiAlertCircle
@@ -142,122 +221,60 @@ export default function AuthPage() {
             </div>
           </div>
 
-          {/* Email/Password Form */}
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="w-full flex flex-col gap-4"
             noValidate
           >
             {!isLogin && (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-(--color-text-muted)">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <FiUser
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-(--color-text-muted)"
-                    size={16}
-                  />
-                  <input
-                    type="text"
-                    {...registerField("fullName", {
-                      required: !isLogin ? "Full name is required" : false,
-                      minLength: {
-                        value: 6,
-                        message: "Full name must be at least 6 characters long",
-                      },
-                    })}
-                    placeholder="John Doe"
-                    className="w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/30 focus:border-(--color-primary) transition-all"
-                  />
-                </div>
-                {errors.fullName && (
-                  <p className="text-xs text-(--color-danger)">
-                    {errors.fullName.message}
-                  </p>
-                )}
-              </div>
+              <FormInput
+                id="fullName"
+                label="Full Name"
+                type="text"
+                icon={<FiUser size={16} />}
+                placeholder="John Doe"
+                register={register}
+                validation={{
+                  required: !isLogin ? "Full name is required" : false,
+                  minLength: {
+                    value: 6,
+                    message: "Full name must be at least 6 characters long",
+                  },
+                }}
+                error={errors.fullName?.message}
+              />
             )}
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-(--color-text-muted)">
-                Email Address
-              </label>
-              <div className="relative">
-                <FiMail
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-(--color-text-muted)"
-                  size={16}
-                />
-                <input
-                  type="email"
-                  {...registerField("email", {
-                    required: "Email is required",
-                    pattern: {
-                      value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                      message: "Please enter a valid email address",
-                    },
-                  })}
-                  placeholder="you@example.com"
-                  className="w-full pl-9 pr-3 py-2.5 text-sm rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/30 focus:border-(--color-primary) transition-all"
-                />
-              </div>
-              {errors.email && (
-                <p className="text-xs text-(--color-danger)">
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
+            <FormInput
+              id="email"
+              label="Email Address"
+              type="email"
+              icon={<FiMail size={16} />}
+              placeholder="you@example.com"
+              register={register}
+              validation={{
+                required: "Email is required",
+                pattern: {
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: "Please enter a valid email address",
+                },
+              }}
+              error={errors.email?.message}
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-(--color-text-muted)">
-                Password
-              </label>
-              <div className="relative">
-                <FiLock
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-(--color-text-muted)"
-                  size={16}
-                />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  {...registerField("password", {
-                    required: "Password is required",
-                    validate: (value) => {
-                      if (value.length < 6) {
-                        return "Password must be at least 6 characters long";
-                      }
-                      if (!isLogin) {
-                        if (!/[A-Z]/.test(value)) {
-                          return "Must contain at least one uppercase letter";
-                        }
-                        if (!/\d/.test(value)) {
-                          return "Must contain at least one digit";
-                        }
-                        if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value)) {
-                          return "Must contain at least one symbol";
-                        }
-                      }
-                      return true;
-                    },
-                  })}
-                  placeholder="••••••••"
-                  className="w-full pl-9 pr-9 py-2.5 text-sm rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/30 focus:border-(--color-primary) transition-all"
-                />
-                {/* Eye Toggle Button */}
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-(--color-text-muted) hover:text-(--color-text) transition-colors focus:outline-none"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-xs text-(--color-danger)">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
+            <FormInput
+              id="password"
+              label="Password"
+              type={showPassword ? "text" : "password"}
+              icon={<FiLock size={16} />}
+              placeholder="••••••••"
+              register={register}
+              validation={passwordValidation}
+              error={errors.password?.message}
+              showPasswordToggle
+              showPassword={showPassword}
+              onTogglePassword={() => setShowPassword((prev) => !prev)}
+            />
 
             <button
               type="submit"
@@ -281,29 +298,17 @@ export default function AuthPage() {
             <div className="flex-1 h-px bg-(--color-border)"></div>
           </div>
 
-          {/* Google Login Button */}
           <div className="w-full flex flex-col items-center justify-center py-2">
-            <div className="relative flex h-10 w-[320px] items-center justify-center">
-              <div
-                className={`absolute inset-0 w-full h-full rounded-(--btn-radius) bg-(--color-border) animate-pulse pointer-events-none transition-opacity duration-500 ${isButtonReady ? "opacity-0" : "opacity-100"}`}
-              />
-              <div
-                ref={buttonWrapperRef}
-                className={`flex h-10 w-[320px] items-center justify-center rounded-(--btn-radius) overflow-hidden shadow-sm transition-all duration-500 ${isButtonReady ? "opacity-100 scale-100 hover:scale-[1.02] active:scale-[0.98]" : "opacity-0 scale-95"}`}
-              >
-                <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={() => clearError()}
-                  text="continue_with"
-                  shape="rectangular"
-                  size="large"
-                  width="320"
-                />
-              </div>
-            </div>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => clearError()}
+              text="continue_with"
+              shape="rectangular"
+              size="large"
+              width="320"
+            />
           </div>
 
-         
           <p className="text-sm text-(--color-text-muted) text-center mt-2">
             {isLogin ? "Don't have an account? " : "Already have an account? "}
             <button

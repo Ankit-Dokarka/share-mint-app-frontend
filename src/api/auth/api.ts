@@ -1,116 +1,60 @@
-export type AuthResponse = {
-  success: boolean;
-  message: string;
-  user?: {
-    _id: string;
-    fullName: string;
-    email: string;
-    avatar: string;
-    createdAt: string;
-    updatedAt: string;
-  };
-};
-
-export type User = {
-  _id: string;
-  fullName: string;
-  email: string;
-  avatar?: string;
-  isVerified?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-};
+import type { AuthResponse } from "../../types/auth";
 
 export const BASE_URL = import.meta.env.VITE_API_URL;
 
+async function apiRequest<T>(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    ...options,
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.message || "An unexpected error occurred");
+  }
+
+  return data as T;
+}
+
 export const authAPI = {
-  async googleLogin(idToken: string) {
-    const response = await fetch(`${BASE_URL}/api/auth/google`, {
+  checkAuth: () => apiRequest<AuthResponse>("/api/auth/check"),
+
+  googleLogin: (idToken: string) =>
+    apiRequest<AuthResponse>("/api/auth/google", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify({ idToken }),
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message);
-    return data;
-  },
+    }),
 
-  async logout(): Promise<void> {
-    const response = await fetch(`${BASE_URL}/api/auth/logout`, {
+  logout: () => apiRequest<void>("/api/auth/logout", { method: "POST" }),
+
+  register: (fullName: string, email: string, password: string) =>
+    apiRequest<AuthResponse>("/api/auth/register", {
       method: "POST",
-      credentials: "include",
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message);
-  },
-
-  async checkAuth() {
-    const response = await fetch(`${BASE_URL}/api/auth/check`, {
-      method: "GET",
-      credentials: "include",
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message);
-    return data;
-  },
-
-
-  async register(fullName: string, email: string, password: string) {
-    const response = await fetch(`${BASE_URL}/api/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify({ fullName, email, password }),
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message);
-    return data;
-  },
+    }),
 
-  async login(email: string, password: string) {
-    const response = await fetch(`${BASE_URL}/api/auth/login`, {
+  login: (email: string, password: string) =>
+    apiRequest<AuthResponse>("/api/auth/login", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify({ email, password }),
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message);
-    return data;
-  },
+    }),
 
-  async verifyEmail(email: string, otp: string) {
-    const response = await fetch(`${BASE_URL}/api/auth/verify-otp`, {
+  verifyEmail: (email: string, otp: string) =>
+    apiRequest<AuthResponse>("/api/auth/verify-otp", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify({ email, otp }),
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message);
-    return data;
-  },
+    }),
 
-  async resendOTP(email: string) {
-    const response = await fetch(`${BASE_URL}/api/auth/resend-otp`, {
+  resendOTP: (email: string) =>
+    apiRequest<AuthResponse>("/api/auth/resend-otp", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify({ email }),
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message);
-    return data;
-  },
+    }),
 
-  async getProfile() {
-    const response = await fetch(`${BASE_URL}/api/users/profile`, {
-      method: "GET",
-      credentials: "include",
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message);
-    return data;
-  },
+  getProfile: () => apiRequest<AuthResponse>("/api/users/profile"),
 };
