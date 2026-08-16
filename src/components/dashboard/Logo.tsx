@@ -1,6 +1,7 @@
+import { memo } from "react";
 import { FiCreditCard } from "react-icons/fi";
 
-export default function Logo({ className = "" }: { className?: string }) {
+const Logo = ({ className = "" }: { className?: string }) => {
   return (
     <span
       aria-label="Sharemint Logo"
@@ -9,4 +10,6 @@ export default function Logo({ className = "" }: { className?: string }) {
       <FiCreditCard className="h-[58%] w-[58%]" aria-hidden="true" />
     </span>
   );
-}
+};
+
+export default memo(Logo);

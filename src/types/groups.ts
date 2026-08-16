@@ -4,6 +4,7 @@ export type User = {
   email: string;
   avatar?: string;
 };
+
 export type SearchedUser = User;
 
 export type Group = {

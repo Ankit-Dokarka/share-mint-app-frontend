@@ -1,4 +1,10 @@
-import { useState, useCallback, type ReactNode, useEffect } from "react";
+import {
+  useState,
+  useCallback,
+  useMemo,
+  type ReactNode,
+  useEffect,
+} from "react";
 import type { User } from "../../types/user";
 import { groupsAPI, type CreateGroupPayload } from "../../api/groups/api";
 import { GroupContext } from "./GroupsContext";
@@ -55,23 +61,36 @@ export function GroupProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    void Promise.resolve().then(fetchGroups);
+    fetchGroups();
   }, [fetchGroups]);
 
+  const contextValue = useMemo(
+    () => ({
+      allUsers,
+      isLoadingUsers,
+      fetchUsers,
+      groups,
+      isLoadingGroups,
+      groupsError,
+      fetchGroups,
+      createGroup,
+      isCreatingGroup,
+    }),
+    [
+      allUsers,
+      isLoadingUsers,
+      fetchUsers,
+      groups,
+      isLoadingGroups,
+      groupsError,
+      fetchGroups,
+      createGroup,
+      isCreatingGroup,
+    ],
+  );
+
   return (
-    <GroupContext.Provider
-      value={{
-        allUsers,
-        isLoadingUsers,
-        fetchUsers,
-        groups,
-        isLoadingGroups,
-        groupsError,
-        fetchGroups,
-        createGroup,
-        isCreatingGroup,
-      }}
-    >
+    <GroupContext.Provider value={contextValue}>
       {children}
     </GroupContext.Provider>
   );

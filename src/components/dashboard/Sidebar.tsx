@@ -1,20 +1,20 @@
-import { useState } from "react";
+import { useState, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { LuPanelLeftClose, LuPanelLeftOpen } from "react-icons/lu";
-import { FiLogOut } from "react-icons/fi";
+import { FiLogOut, FiLoader } from "react-icons/fi";
 import Logo from "./Logo";
 import SidebarItem from "./SidebarItem";
-import { sidebarNavItems } from "../../constants/navigation";
+import { navItems } from "../../constants/navigation";
 import useAuth from "../../context/auth/AuthContext";
 import getName from "../../utils/getName";
 
-export default function Sidebar() {
+const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     setIsLoggingOut(true);
     try {
       await logout();
@@ -24,7 +24,7 @@ export default function Sidebar() {
     } finally {
       setIsLoggingOut(false);
     }
-  };
+  }, [logout, navigate]);
 
   return (
     <aside
@@ -63,7 +63,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 px-3 py-4 flex flex-col gap-1 overflow-y-auto overflow-x-hidden">
-        {sidebarNavItems.map((item) => (
+        {navItems.map((item) => (
           <SidebarItem
             key={item.to}
             to={item.to}
@@ -87,26 +87,7 @@ export default function Sidebar() {
               title="Logout"
             >
               {isLoggingOut ? (
-                <svg
-                  className="animate-spin h-4 w-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
+                <FiLoader className="animate-spin" size={16} />
               ) : (
                 <FiLogOut size={16} />
               )}
@@ -143,26 +124,7 @@ export default function Sidebar() {
                   title="Logout"
                 >
                   {isLoggingOut ? (
-                    <svg
-                      className="animate-spin h-4 w-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
+                    <FiLoader className="animate-spin" size={14} />
                   ) : (
                     <FiLogOut size={14} />
                   )}
@@ -174,4 +136,6 @@ export default function Sidebar() {
       )}
     </aside>
   );
-}
+};
+
+export default memo(Sidebar);

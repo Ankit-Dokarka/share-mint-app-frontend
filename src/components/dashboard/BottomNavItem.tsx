@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { NavLink } from "react-router-dom";
 import type { IconType } from "react-icons";
 
@@ -7,11 +8,7 @@ type BottomNavItemProps = {
   label: string;
 };
 
-export default function BottomNavItem({
-  to,
-  icon: Icon,
-  label,
-}: BottomNavItemProps) {
+const BottomNavItem = ({ to, icon: Icon, label }: BottomNavItemProps) => {
   return (
     <NavLink
       to={to}
@@ -26,4 +23,6 @@ export default function BottomNavItem({
       <span>{label}</span>
     </NavLink>
   );
-}
+};
+
+export default memo(BottomNavItem);

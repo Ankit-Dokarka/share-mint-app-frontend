@@ -1,118 +1,62 @@
-import type { Group } from "../../types/groups";
-import type { User } from "../../types/user";
+import type { Group, User } from "../../types/groups";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
+
+async function apiRequest<T>(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...options.headers },
+    ...options,
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.message || "An unexpected error occurred");
+  }
+
+  return data as T;
+}
 
 export type CreateGroupPayload = {
   name: string;
   members: string[];
 };
 
-export type SearchMembersResponse = {
-  success: true;
-  users: User[];
-};
-
-export type CreateGroupResponse = {
-  success: true;
-  group: Group;
-};
-
-export type GroupsResponse = {
-  success: true;
-  groups: Group[];
-};
-
-
-
 export const groupsAPI = {
-  async searchMembers(query: string): Promise<User[]> {
-    const response = await fetch(
-      `${BASE_URL}/api/users/search?query=${encodeURIComponent(query)}`,
-      {
-        method: "GET",
-        credentials: "include",
-      },
+  searchMembers: async (query: string): Promise<User[]> => {
+    const res = await apiRequest<{ users: User[] }>(
+      `/api/users/search?query=${encodeURIComponent(query)}`,
     );
-
-    const data = (await response.json()) as Partial<SearchMembersResponse> & {
-      message?: string;
-    };
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to search members");
-    }
-
-    return data.users ?? [];
+    return res.users ?? [];
   },
 
-  async getUsers(): Promise<User[]> {
-    const response = await fetch(`${BASE_URL}/api/users`, {
-      method: "GET",
-      credentials: "include",
-    });
-
-    const data = (await response.json()) as Partial<SearchMembersResponse> & {
-      message?: string;
-    };
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to fetch users");
-    }
-
-    return data.users ?? [];
+  getUsers: async (): Promise<User[]> => {
+    const res = await apiRequest<{ users: User[] }>(`/api/users`);
+    return res.users ?? [];
   },
 
-  async createGroup(payload: CreateGroupPayload): Promise<Group> {
-    const response = await fetch(`${BASE_URL}/api/groups`, {
+  createGroup: async (payload: CreateGroupPayload): Promise<Group> => {
+    const res = await apiRequest<{ group: Group }>("/api/groups", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
       body: JSON.stringify(payload),
     });
-
-    const data = (await response.json()) as Partial<CreateGroupResponse> & {
-      message?: string;
-    };
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to create group");
-    }
-
-    if (!data.group) {
+    if (!res.group)
       throw new Error("Create group response did not include a group");
-    }
-
-    return data.group;
+    return res.group;
   },
 
-  async getGroups(): Promise<Group[]> {
-    const response = await fetch(`${BASE_URL}/api/groups`, {
-      method: "GET",
-      credentials: "include",
-    });
-
-    const data = (await response.json()) as Partial<GroupsResponse> & {
-      message?: string;
-    };
-    if (!response.ok) throw new Error(data.message || "Failed to fetch groups");
-    return data.groups ?? [];
+  getGroups: async (): Promise<Group[]> => {
+    const res = await apiRequest<{ groups: Group[] }>(`/api/groups`);
+    return res.groups ?? [];
   },
 
-  async getGroupById(groupId: string): Promise<Group> {
-    const response = await fetch(`${BASE_URL}/api/groups/${groupId}`, {
-      method: "GET",
-      credentials: "include",
-    });
-
-    const data = (await response.json()) as Partial<CreateGroupResponse> & {
-      message?: string;
-    };
-
-    if (!response.ok) throw new Error(data.message || "Failed to fetch group");
-    if (!data.group) throw new Error("Group not found");
-    return data.group;
+  getGroupById: async (groupId: string): Promise<Group> => {
+    const res = await apiRequest<{ group: Group }>(`/api/groups/${groupId}`);
+    if (!res.group) throw new Error("Group not found");
+    return res.group;
   },
 };

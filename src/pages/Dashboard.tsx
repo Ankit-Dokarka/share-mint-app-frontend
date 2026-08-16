@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   FiAlertCircle,
@@ -9,13 +10,44 @@ import {
 import useAuth from "../context/auth/AuthContext";
 import { useGroup } from "../context/groups/GroupsContext";
 
-export default function Dashboard() {
+const StatCard = memo(
+  ({
+    icon,
+    label,
+    value,
+    colorClass,
+  }: {
+    icon: React.ReactNode;
+    label: string;
+    value: React.ReactNode;
+    colorClass: string;
+  }) => (
+    <div className="rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface) p-5 shadow-sm">
+      <div
+        className={`flex h-10 w-10 items-center justify-center rounded-(--btn-radius) ${colorClass}`}
+      >
+        {icon}
+      </div>
+      <p className="mt-5 text-sm font-medium text-(--color-text-muted)">
+        {label}
+      </p>
+      <p className="mt-1 text-3xl font-extrabold text-(--color-text)">
+        {value}
+      </p>
+    </div>
+  ),
+);
+StatCard.displayName = "StatCard";
+
+const Dashboard = () => {
   const { user } = useAuth();
   const { groups, isLoadingGroups, groupsError } = useGroup();
 
-  const uniqueMemberCount = new Set(
-    groups.flatMap((group) => group.members.map((member) => member._id)),
-  ).size;
+  const uniqueMemberCount = useMemo(() => {
+    return new Set(
+      groups.flatMap((group) => group.members.map((member) => member._id)),
+    ).size;
+  }, [groups]);
 
   return (
     <section className="mx-auto flex w-full max-w-10xl flex-col gap-6">
@@ -56,7 +88,7 @@ export default function Dashboard() {
           <div className="h-64 animate-pulse rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface)" />
         </div>
       ) : groupsError ? (
-        <div className="flex min-h-[26rem] flex-col items-center justify-center rounded-(--btn-radius) border border-dashed border-(--color-danger) bg-(--color-surface) px-6 text-center shadow-sm">
+        <div className="flex min-h-104 flex-col items-center justify-center rounded-(--btn-radius) border border-dashed border-(--color-danger) bg-(--color-surface) px-6 text-center shadow-sm">
           <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-(--color-danger-soft) text-(--color-danger)">
             <FiAlertCircle size={30} />
           </div>
@@ -68,7 +100,7 @@ export default function Dashboard() {
           </p>
         </div>
       ) : groups.length === 0 ? (
-        <div className="flex min-h-[26rem] flex-col items-center justify-center rounded-(--btn-radius) border border-dashed border-(--color-border-strong) bg-(--color-surface) px-6 text-center shadow-sm">
+        <div className="flex min-h-104 flex-col items-center justify-center rounded-(--btn-radius) border border-dashed border-(--color-border-strong) bg-(--color-surface) px-6 text-center shadow-sm">
           <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-(--color-primary-soft) text-(--color-primary)">
             <FiUsers size={30} />
           </div>
@@ -90,41 +122,26 @@ export default function Dashboard() {
       ) : (
         <div className="flex flex-col gap-6">
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface) p-5 shadow-sm">
-              <div className="flex h-10 w-10 items-center justify-center rounded-(--btn-radius) bg-(--color-primary-soft) text-(--color-primary)">
-                <FiUsers size={20} />
-              </div>
-              <p className="mt-5 text-sm font-medium text-(--color-text-muted)">
-                Active groups
-              </p>
-              <p className="mt-1 text-3xl font-extrabold text-(--color-text)">
-                {groups.length}
-              </p>
-            </div>
-
-            <div className="rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface) p-5 shadow-sm">
-              <div className="flex h-10 w-10 items-center justify-center rounded-(--btn-radius) bg-(--color-success-soft) text-(--color-success)">
-                <FiUsers size={20} />
-              </div>
-              <p className="mt-5 text-sm font-medium text-(--color-text-muted)">
-                Members connected
-              </p>
-              <p className="mt-1 text-3xl font-extrabold text-(--color-text)">
-                {uniqueMemberCount}
-              </p>
-            </div>
-
-            <div className="rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface) p-5 shadow-sm">
-              <div className="flex h-10 w-10 items-center justify-center rounded-(--btn-radius) bg-(--color-danger-soft) text-(--color-danger)">
-                <FiCreditCard size={20} />
-              </div>
-              <p className="mt-5 text-sm font-medium text-(--color-text-muted)">
-                Balance tracking
-              </p>
-              <p className="mt-1 text-lg font-bold text-(--color-text)">
-                To pay and to receive
-              </p>
-            </div>
+            <StatCard
+              icon={<FiUsers size={20} />}
+              label="Active groups"
+              value={groups.length}
+              colorClass="bg-(--color-primary-soft) text-(--color-primary)"
+            />
+            <StatCard
+              icon={<FiUsers size={20} />}
+              label="Members connected"
+              value={uniqueMemberCount}
+              colorClass="bg-(--color-success-soft) text-(--color-success)"
+            />
+            <StatCard
+              icon={<FiCreditCard size={20} />}
+              label="Balance tracking"
+              value={
+                <span className="text-lg font-bold">To pay and to receive</span>
+              }
+              colorClass="bg-(--color-danger-soft) text-(--color-danger)"
+            />
           </div>
 
           <div className="rounded-(--btn-radius) border border-(--color-border) bg-(--color-surface) shadow-sm">
@@ -167,4 +184,6 @@ export default function Dashboard() {
       )}
     </section>
   );
-}
+};
+
+export default memo(Dashboard);

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { NavLink } from "react-router-dom";
 import type { IconType } from "react-icons";
 
@@ -9,13 +10,13 @@ type SidebarItemProps = {
   title?: string;
 };
 
-export default function SidebarItem({
+const SidebarItem = ({
   to,
   icon: Icon,
   label,
   isCollapsed,
   title,
-}: SidebarItemProps) {
+}: SidebarItemProps) => {
   return (
     <NavLink
       to={to}
@@ -44,4 +45,6 @@ export default function SidebarItem({
       )}
     </NavLink>
   );
-}
+};
+
+export default memo(SidebarItem);

@@ -1,107 +1,113 @@
-import { useState, useRef, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FiShield, FiLoader, FiCheckCircle } from "react-icons/fi";
+import {
+  FiShield,
+  FiLoader,
+  FiCheckCircle,
+  FiAlertCircle,
+} from "react-icons/fi";
 import { authAPI } from "../api/auth/api";
 import { getFriendlyError } from "../utils/getFriendlyError";
-
-type OTPForm = {
-  otp: string[];
-};
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
   const location = useLocation();
-
-  
   const email = location.state?.email || "";
 
+  const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  const { handleSubmit, setValue, watch } = useForm<OTPForm>({
-    defaultValues: { otp: ["", "", "", "", "", ""] },
-  });
-
-  const otpValues = watch("otp");
+  const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    
     if (!email) {
       navigate("/", { replace: true });
       return;
     }
     inputRefs.current[0]?.focus();
+
+    return () => {
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    };
   }, [email, navigate]);
 
-  const handleChange = (
-    index: number,
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    if (error) setError("");
-    if (successMsg) setSuccessMsg("");
+  const handleChange = useCallback(
+    (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+      if (error) setError("");
+      if (successMsg) setSuccessMsg("");
 
-    const value = e.target.value.replace(/\D/g, "");
+      const value = e.target.value.replace(/\D/g, "");
 
-    if (value.length > 1) {
-      const pastedDigits = value.slice(0, 6).split("");
-      const newOtp = ["", "", "", "", "", ""];
-      pastedDigits.forEach((digit, i) => {
-        newOtp[i] = digit;
+      if (value.length > 1) {
+        const pastedDigits = value.slice(0, 6).split("");
+        const newOtp = Array(6).fill("");
+        pastedDigits.forEach((digit, i) => {
+          newOtp[i] = digit;
+        });
+        setOtp(newOtp);
+        const nextIndex = Math.min(pastedDigits.length, 5);
+        inputRefs.current[nextIndex]?.focus();
+        return;
+      }
+
+      setOtp((prev) => {
+        const newOtp = [...prev];
+        newOtp[index] = value;
+        return newOtp;
       });
-      setValue("otp", newOtp);
-      const nextIndex = Math.min(pastedDigits.length, 5);
-      inputRefs.current[nextIndex]?.focus();
-      return;
-    }
 
-    setValue(`otp.${index}`, value);
-    if (value && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
+      if (value && index < 5) {
+        inputRefs.current[index + 1]?.focus();
+      }
+    },
+    [error, successMsg],
+  );
 
-  const handleKeyDown = (
-    index: number,
-    e: React.KeyboardEvent<HTMLInputElement>,
-  ) => {
-    if (e.key === "Backspace" && !otpValues[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
+  const handleKeyDown = useCallback(
+    (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Backspace" && !otp[index] && index > 0) {
+        inputRefs.current[index - 1]?.focus();
+      }
+    },
+    [otp],
+  );
 
-  const onSubmit = async (data: OTPForm) => {
-    const finalOtp = data.otp.join("");
+  const onSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      const finalOtp = otp.join("");
 
-    if (finalOtp.length !== 6) {
-      setError("Please enter all 6 digits.");
-      return;
-    }
+      if (finalOtp.length !== 6) {
+        setError("Please enter all 6 digits.");
+        return;
+      }
 
-    setIsVerifying(true);
-    setError("");
+      setIsVerifying(true);
+      setError("");
 
-    try {
-      const response = await authAPI.verifyEmail(email, finalOtp);
-      setSuccessMsg(response.message + " Redirecting to login...");
+      try {
+        const response = await authAPI.verifyEmail(email, finalOtp);
+        setSuccessMsg(response.message + " Redirecting to login...");
 
-      
-      setTimeout(() => {
-        navigate("/login");
-      }, 2000);
-    } catch (err) {
-      setError(getFriendlyError(err));
-      setValue("otp", ["", "", "", "", "", ""]);
-      inputRefs.current[0]?.focus();
-    } finally {
-      setIsVerifying(false);
-    }
-  };
+        redirectTimer.current = setTimeout(() => {
+          navigate("/login");
+        }, 2000);
+      } catch (err) {
+        setError(getFriendlyError(err));
+        setOtp(Array(6).fill(""));
+        inputRefs.current[0]?.focus();
+      } finally {
+        setIsVerifying(false);
+      }
+    },
+    [otp, email, navigate],
+  );
 
-  const handleResend = async () => {
+  const handleResend = useCallback(async () => {
     setIsResending(true);
     setError("");
     setSuccessMsg("");
@@ -114,9 +120,9 @@ export default function VerifyEmail() {
     } finally {
       setIsResending(false);
     }
-  };
+  }, [email]);
 
-  const isComplete = otpValues.every((d) => d !== "");
+  const isComplete = otp.every((d) => d !== "");
 
   return (
     <div className="relative flex min-h-dvh w-full items-center justify-center bg-(--color-bg) p-4 overflow-hidden">
@@ -140,10 +146,10 @@ export default function VerifyEmail() {
           </div>
         </div>
 
-        <form className="flex flex-col gap-6" onSubmit={handleSubmit(onSubmit)}>
+        <form className="flex flex-col gap-6" onSubmit={onSubmit}>
           <div className="flex flex-col gap-4">
             <div className="flex justify-between gap-2 md:gap-3">
-              {otpValues.map((digit, index) => (
+              {otp.map((digit, index) => (
                 <input
                   key={index}
                   type="text"
@@ -167,7 +173,8 @@ export default function VerifyEmail() {
             {/* Error or Success Message */}
             {error && (
               <p className="text-(--color-danger) text-xs font-medium min-h-4 text-center flex items-center justify-center gap-1.5">
-                <FiShield className="text-danger" size={12} /> {error}
+                <FiAlertCircle className="text-(--color-danger)" size={12} />{" "}
+                {error}
               </p>
             )}
             {successMsg && (
@@ -198,7 +205,7 @@ export default function VerifyEmail() {
               type="button"
               onClick={handleResend}
               disabled={isResending}
-              className="font-semibold text-(--color-primary) hover:underline transition-colors disabled:opacity-50 flex items-center gap-1 inline-flex"
+              className="font-semibold text-(--color-primary) hover:underline transition-colors disabled:opacity-50  items-center gap-1 inline-flex"
             >
               {isResending ? (
                 <FiLoader className="animate-spin" size={12} />
