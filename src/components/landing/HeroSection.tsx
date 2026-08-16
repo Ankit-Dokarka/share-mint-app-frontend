@@ -146,7 +146,7 @@ export default function HeroSection() {
           className="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tighter text-(--color-text) mb-8"
           style={{ fontFamily: "var(--font-heading)" }}
         >
-          Split expenses, <br /> not friendships.
+          Spli expenses, <br /> not friendships.
         </h1>
 
         <p className="text-lg md:text-xl text-(--color-text-muted) mb-12 max-w-2xl">
