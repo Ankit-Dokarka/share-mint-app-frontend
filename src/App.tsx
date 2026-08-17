@@ -1,9 +1,11 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import PublicRoute from "./routes/PublicRoute";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import VerificationRoute from "./routes/VerificationRoute";
 import LandingPage from "./pages/LandingPage";
+import useAuth from "./context/auth/AuthContext";
+import { connectSocket, disconnectSocket } from "./socket/socket";
 
 const AuthPage = lazy(() => import("./pages/Auth"));
 const DashboardLayout = lazy(() => import("./layouts/DashboardLayout"));
@@ -22,6 +24,16 @@ const RouteLoader = () => (
 );
 
 export default function App() {
+  const { user } = useAuth();
+
+  useEffect(() => {
+    console.log("AUTH USER:", user?._id);
+    if (user && user._id) {
+      connectSocket();
+    } else {
+      disconnectSocket();
+    }
+  }, [user && user._id]);
   return (
     <BrowserRouter>
       <Suspense fallback={<RouteLoader />}>

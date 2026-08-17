@@ -115,7 +115,7 @@ const ExpenseItem = memo(({ expense }: { expense: Expense }) => (
       {expense.paidBy.fullName}
     </p>
     <p className="md:col-span-2 text-sm text-(--color-text-muted) flex items-center gap-1">
-      <FiCalendar size={13} /> {formatDate(expense.createdAt)}
+      <FiCalendar size={13} /> {formatDate(expense.expenseDate)}
     </p>
   </div>
 ));

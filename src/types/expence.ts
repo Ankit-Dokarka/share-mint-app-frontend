@@ -20,6 +20,7 @@ export type Expense = {
   group: string;
   participants: Participant[];
   splitType: "equal" | "percentage" | "exact";
+  expenseDate: string;
   createdAt: string;
   updatedAt: string;
 };
