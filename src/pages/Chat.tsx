@@ -10,16 +10,17 @@ import {
   FiVideo,
   FiUsers,
 } from "react-icons/fi";
+import { useGroup } from "../context/groups/GroupsContext";
 
 type Message = {
-  id: number;
+  id: string;
   text: string;
   time: string;
   sender: "me" | "them";
 };
 
 type Chat = {
-  id: number;
+  id: string;
   name: string;
   avatar: string;
   avatarBg: string;
@@ -31,150 +32,22 @@ type Chat = {
   messages: Message[];
 };
 
-const DUMMY_CHATS: Chat[] = [
-  {
-    id: 1,
-    name: "Alex Sharma",
-    avatar: "AS",
-    avatarBg: "bg-(--color-primary-soft) text-(--color-primary)",
-    lastMessage: "Hey, are we still on for dinner tonight?",
-    time: "2m",
-    unread: 2,
-    online: true,
-    messages: [
-      { id: 1, text: "Hey! How's it going?", time: "10:24 AM", sender: "them" },
-      {
-        id: 2,
-        text: "All good! Just checking the trip expenses",
-        time: "10:25 AM",
-        sender: "me",
-      },
-      {
-        id: 3,
-        text: "Cool. Did you see the dinner bill I added?",
-        time: "10:26 AM",
-        sender: "them",
-      },
-      {
-        id: 4,
-        text: "Yes, I'm paying it now actually",
-        time: "10:27 AM",
-        sender: "me",
-      },
-      { id: 5, text: "Awesome, thanks!", time: "10:27 AM", sender: "them" },
-      {
-        id: 6,
-        text: "Hey, are we still on for dinner tonight?",
-        time: "10:30 AM",
-        sender: "them",
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: "Priya Patel",
-    avatar: "PP",
-    avatarBg: "bg-(--color-danger-soft) text-(--color-danger)",
-    lastMessage: "I sent you the receipts 🧾",
-    time: "1h",
-    unread: 0,
-    online: false,
-    messages: [
-      {
-        id: 1,
-        text: "Hey Priya, do you have the cab receipts?",
-        time: "9:10 AM",
-        sender: "me",
-      },
-      {
-        id: 2,
-        text: "Yes! Uploading them now",
-        time: "9:12 AM",
-        sender: "them",
-      },
-      {
-        id: 3,
-        text: "I sent you the receipts 🧾",
-        time: "9:15 AM",
-        sender: "them",
-      },
-    ],
-  },
-  {
-    id: 3,
-    name: "Trip 2024",
-    avatar: "T2",
-    avatarBg: "bg-(--color-success-soft) text-(--color-success)",
-    lastMessage: "Maya: Let's settle up tomorrow",
-    time: "Yd",
-    unread: 5,
-    online: true,
-    isGroup: true,
-    messages: [
-      {
-        id: 1,
-        text: "Guys, the trip was amazing!",
-        time: "Yesterday",
-        sender: "them",
-      },
-      { id: 2, text: "Best one yet 🎉", time: "Yesterday", sender: "me" },
-      {
-        id: 3,
-        text: "Let's settle up tomorrow",
-        time: "Yesterday",
-        sender: "them",
-      },
-    ],
-  },
-  {
-    id: 4,
-    name: "Raj Kumar",
-    avatar: "RK",
-    avatarBg: "bg-(--color-primary-soft) text-(--color-primary)",
-    lastMessage: "Sounds good 👍",
-    time: "Yd",
-    unread: 0,
-    online: false,
-    messages: [
-      {
-        id: 1,
-        text: "Can you cover me for drinks?",
-        time: "Yesterday",
-        sender: "me",
-      },
-      { id: 2, text: "Sounds good 👍", time: "Yesterday", sender: "them" },
-    ],
-  },
-  {
-    id: 5,
-    name: "Maya Singh",
-    avatar: "MS",
-    avatarBg: "bg-(--color-danger-soft) text-(--color-danger)",
-    lastMessage: "Thanks for covering!",
-    time: "Mon",
-    unread: 0,
-    online: true,
-    messages: [
-      { id: 1, text: "Thanks for covering!", time: "Monday", sender: "them" },
-    ],
-  },
-];
-
-// 2. Extracted & Memoized Message Bubble
 const MessageBubble = memo(({ msg }: { msg: Message }) => (
   <div
     className={`flex ${msg.sender === "me" ? "justify-end" : "justify-start"}`}
   >
     <div
-      className={`max-w-[78%] sm:max-w-[65%] px-3.5 py-2 rounded-(--btn-radius) text-sm ${
+      className={`max-w-[75%] md:max-w-[60%] px-4 py-2.5 text-sm shadow-sm rounded-2xl transition-all ${
         msg.sender === "me"
-          ? "bg-(--color-primary) text-white rounded-br-sm"
-          : "bg-(--color-surface) border border-(--color-border) text-(--color-text) rounded-bl-sm"
+          ? "bg-(--color-primary) text-white rounded-br-md"
+          : "bg-white border border-(--color-border) text-(--color-text) rounded-bl-md"
       }`}
     >
       <p className="leading-relaxed">{msg.text}</p>
       <p
-        className={`mt-1 text-[10px] ${msg.sender === "me" ? "text-white/70" : "text-(--color-text-soft)"}`}
+        className={`mt-1 text-[10px] text-right ${
+          msg.sender === "me" ? "text-white/70" : "text-(--color-text-soft)"
+        }`}
       >
         {msg.time}
       </p>
@@ -191,24 +64,28 @@ const ChatListItem = memo(
   }: {
     chat: Chat;
     isActive: boolean;
-    onSelect: (id: number) => void;
+    onSelect: (id: string) => void; // Changed to string
   }) => (
     <button
       onClick={() => onSelect(chat.id)}
-      className={`w-full flex items-center gap-3 px-4 py-3.5 text-left border-b border-(--color-border)/60 transition-colors ${
+      className={`w-full flex items-center gap-3 px-4 py-3.5 text-left border-b border-(--color-border)/50 transition-colors relative ${
         isActive
-          ? "bg-(--color-primary-soft)/30"
-          : "hover:bg-(--color-surface-strong)/60"
+          ? "bg-(--color-primary-soft)/40"
+          : "hover:bg-(--color-surface-strong)/50"
       }`}
     >
+      {isActive && (
+        <span className="absolute left-0 top-0 h-full w-1 bg-(--color-primary)" />
+      )}
+
       <div className="relative shrink-0">
         <div
-          className={`flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold ${chat.avatarBg}`}
+          className={`flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold ${chat.avatarBg}`}
         >
           {chat.isGroup ? <FiUsers size={18} /> : chat.avatar}
         </div>
         {chat.online && (
-          <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-(--color-success) border-2 border-(--color-surface)" />
+          <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-(--color-surface)" />
         )}
       </div>
 
@@ -217,7 +94,7 @@ const ChatListItem = memo(
           <h3 className="text-sm font-semibold text-(--color-text) truncate">
             {chat.name}
           </h3>
-          <span className="text-xs text-(--color-text-soft) shrink-0">
+          <span className="text-[11px] text-(--color-text-soft) shrink-0">
             {chat.time}
           </span>
         </div>
@@ -226,7 +103,7 @@ const ChatListItem = memo(
             {chat.lastMessage}
           </p>
           {chat.unread > 0 && (
-            <span className="shrink-0 flex h-5 min-w-5 px-1 items-center justify-center rounded-full bg-(--color-primary) text-[10px] font-bold text-white">
+            <span className="shrink-0 flex h-5 min-w-5 px-1.5 items-center justify-center rounded-full bg-(--color-primary) text-[10px] font-bold text-white">
               {chat.unread}
             </span>
           )}
@@ -238,13 +115,33 @@ const ChatListItem = memo(
 ChatListItem.displayName = "ChatListItem";
 
 const Chat = () => {
-  const [activeChatId, setActiveChatId] = useState<number | null>(null);
+  const { groups } = useGroup(); // Fetching groups from context
+
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Map API groups to UI Chat format
+  const mappedChats: Chat[] = useMemo(() => {
+    return groups.map((group) => ({
+      id: group._id,
+      name: group.name,
+      avatar: group.name.charAt(0).toUpperCase(),
+      avatarBg: "bg-(--color-primary-soft) text-(--color-primary)", // Default color
+      lastMessage: group.description || "No messages yet", // Placeholder
+      time: group.createdAt
+        ? new Date(group.createdAt).toLocaleDateString()
+        : "",
+      unread: 0, // Placeholder
+      online: false, // Placeholder
+      isGroup: true,
+      messages: [], // Empty for now until socket is connected
+    }));
+  }, [groups]);
+
   const activeChat = useMemo(
-    () => DUMMY_CHATS.find((c) => c.id === activeChatId) || null,
-    [activeChatId],
+    () => mappedChats.find((c) => c.id === activeChatId) || null,
+    [activeChatId, mappedChats],
   );
 
   useEffect(() => {
@@ -256,153 +153,157 @@ const Chat = () => {
     setInput("");
   }, [input]);
 
-  const handleSelectChat = useCallback((id: number) => setActiveChatId(id), []);
+  const handleSelectChat = useCallback((id: string) => setActiveChatId(id), []);
   const handleBack = useCallback(() => setActiveChatId(null), []);
 
   return (
-    <main className="h-[calc(100vh-0px)] md:h-[calc(100vh-0px)] w-full bg-(--color-bg)">
-      <div className="mx-auto w-full max-w-10xl h-full md:p-4 md:pt-6">
-        <div className="grid grid-cols-1 md:grid-cols-[340px_1fr] h-full md:h-[calc(100vh-2rem)] rounded-(--btn-radius) overflow-hidden border border-(--color-border) bg-(--color-surface) shadow-lg">
-          {/* ===== Chat List Panel ===== */}
-          <aside
-            className={`${activeChat ? "hidden md:flex" : "flex"} flex-col w-full h-full border-r border-(--color-border) bg-(--color-surface)`}
-          >
-            <div className="px-5 py-4 border-b border-(--color-border)">
-              <h1
-                className="text-xl font-bold text-(--color-text)"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                Chats
-              </h1>
-              <div className="mt-3 relative">
-                <FiSearch
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-(--color-text-soft)"
-                />
-                <input
-                  type="text"
-                  placeholder="Search messages..."
-                  className="w-full pl-9 pr-3 py-2.5 text-sm bg-(--color-surface-strong) border border-transparent rounded-(--btn-radius) text-(--color-text) placeholder:text-(--color-text-soft) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/25 focus:border-(--color-primary) transition-all"
-                />
-              </div>
+    <main className="h-full w-full overflow-hidden bg-(--color-bg) p-0 sm:p-4">
+      <div className="grid h-full w-full grid-cols-1 overflow-hidden border border-(--color-border) bg-(--color-surface) shadow-sm sm:grid-cols-[340px_1fr] sm:rounded-2xl md:grid-cols-[360px_1fr]">
+        {/* ===== Chat List Panel ===== */}
+        <aside
+          className={`${
+            activeChat ? "hidden md:flex" : "flex"
+          } flex-col w-full h-full border-r border-(--color-border) bg-(--color-surface)`}
+        >
+          <div className="px-5 py-4 border-b border-(--color-border) bg-(--color-surface)">
+            <h1 className="text-xl font-bold text-(--color-text) mb-3">
+              Chats
+            </h1>
+            <div className="relative">
+              <FiSearch
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-(--color-text-soft)"
+              />
+              <input
+                type="text"
+                placeholder="Search messages..."
+                className="w-full pl-9 pr-3 py-2.5 text-sm bg-(--color-surface-strong) border border-transparent rounded-xl text-(--color-text) placeholder:text-(--color-text-soft) focus:outline-none focus:ring-2 focus:ring-(--color-primary)/20 focus:bg-white transition-all"
+              />
             </div>
+          </div>
 
-            <div className="flex-1 overflow-y-auto">
-              {DUMMY_CHATS.map((chat) => (
+          <div className="flex-1 overflow-y-auto">
+            {mappedChats.length > 0 ? (
+              mappedChats.map((chat) => (
                 <ChatListItem
                   key={chat.id}
                   chat={chat}
                   isActive={activeChatId === chat.id}
                   onSelect={handleSelectChat}
                 />
-              ))}
-            </div>
-          </aside>
-
-          {/* ===== Conversation Panel ===== */}
-          <section
-            className={`${activeChat ? "flex" : "hidden md:flex"} flex-col w-full h-full bg-(--color-bg)`}
-          >
-            {activeChat ? (
-              <>
-                <header className="flex items-center gap-3 px-4 py-3 border-b border-(--color-border) bg-(--color-surface)">
-                  <button
-                    onClick={handleBack}
-                    className="md:hidden flex h-9 w-9 items-center justify-center rounded-full hover:bg-(--color-surface-strong) text-(--color-text) transition-colors"
-                  >
-                    <FiArrowLeft size={20} />
-                  </button>
-
-                  <div className="relative shrink-0">
-                    <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${activeChat.avatarBg}`}
-                    >
-                      {activeChat.isGroup ? (
-                        <FiUsers size={16} />
-                      ) : (
-                        activeChat.avatar
-                      )}
-                    </div>
-                    {activeChat.online && (
-                      <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-(--color-success) border-2 border-(--color-surface)" />
-                    )}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-sm font-semibold text-(--color-text) truncate">
-                      {activeChat.name}
-                    </h2>
-                    <p className="text-xs text-(--color-text-muted)">
-                      {activeChat.online ? "Online" : "Last seen recently"}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <button className="hidden sm:flex h-9 w-9 items-center justify-center rounded-full hover:bg-(--color-surface-strong) text-(--color-text-muted) transition-colors">
-                      <FiPhone size={18} />
-                    </button>
-                    <button className="hidden sm:flex h-9 w-9 items-center justify-center rounded-full hover:bg-(--color-surface-strong) text-(--color-text-muted) transition-colors">
-                      <FiVideo size={18} />
-                    </button>
-                    <button className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-(--color-surface-strong) text-(--color-text-muted) transition-colors">
-                      <FiMoreVertical size={18} />
-                    </button>
-                  </div>
-                </header>
-
-                <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-                  {activeChat.messages.map((msg) => (
-                    <MessageBubble key={msg.id} msg={msg} />
-                  ))}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                <div className="px-3 py-3 border-t border-(--color-border) bg-(--color-surface)">
-                  <div className="flex items-center gap-2">
-                    <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-(--color-surface-strong) text-(--color-text-muted) transition-colors">
-                      <FiPaperclip size={18} />
-                    </button>
-                    <div className="flex-1 flex items-center gap-2 px-3 py-2 bg-(--color-surface-strong) rounded-(--btn-radius) border border-transparent focus-within:border-(--color-primary) focus-within:ring-2 focus-within:ring-(--color-primary)/20 transition-all">
-                      <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                        placeholder="Type a message..."
-                        className="flex-1 bg-transparent text-sm text-(--color-text) placeholder:text-(--color-text-soft) focus:outline-none"
-                      />
-                      <button className="text-(--color-text-muted) hover:text-(--color-text) transition-colors">
-                        <FiSmile size={20} />
-                      </button>
-                    </div>
-                    <button
-                      onClick={handleSend}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-(--color-primary) text-white hover:bg-(--color-primary-hover) transition-colors shadow-sm"
-                    >
-                      <FiSend size={16} />
-                    </button>
-                  </div>
-                </div>
-              </>
+              ))
             ) : (
-              <div className="hidden md:flex flex-col items-center justify-center h-full text-center px-6">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-(--color-surface-strong) text-(--color-text-soft) mb-4">
-                  <FiSend size={32} />
-                </div>
-                <h3
-                  className="text-lg font-bold text-(--color-text)"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
-                  Your Messages
-                </h3>
-                <p className="mt-1 text-sm text-(--color-text-muted) max-w-xs">
-                  Select a conversation from the list to start chatting with
-                  your friends and groups.
-                </p>
+              <div className="p-4 text-center text-sm text-(--color-text-muted)">
+                No groups available.
               </div>
             )}
-          </section>
-        </div>
+          </div>
+        </aside>
+
+        {/* ===== Conversation Panel ===== */}
+        <section
+          className={`${
+            activeChat ? "flex" : "hidden md:flex"
+          } flex-col w-full h-full bg-(--color-bg)`}
+        >
+          {activeChat ? (
+            <>
+              {/* Chat Header */}
+              <header className="flex items-center gap-3 px-4 py-3 border-b border-(--color-border) bg-(--color-surface) z-10">
+                <button
+                  onClick={handleBack}
+                  className="md:hidden flex h-9 w-9 items-center justify-center rounded-full hover:bg-(--color-surface-strong) text-(--color-text) transition-colors"
+                >
+                  <FiArrowLeft size={20} />
+                </button>
+
+                <div className="relative shrink-0">
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${activeChat.avatarBg}`}
+                  >
+                    <FiUsers size={16} />
+                  </div>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-sm font-semibold text-(--color-text) truncate">
+                    {activeChat.name}
+                  </h2>
+                  <p className="text-xs text-(--color-text-muted)">
+                    {activeChat.online ? "Online" : "Last seen recently"}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <button className="hidden sm:flex h-9 w-9 items-center justify-center rounded-full hover:bg-(--color-surface-strong) text-(--color-text-muted) transition-colors">
+                    <FiPhone size={18} />
+                  </button>
+                  <button className="hidden sm:flex h-9 w-9 items-center justify-center rounded-full hover:bg-(--color-surface-strong) text-(--color-text-muted) transition-colors">
+                    <FiVideo size={18} />
+                  </button>
+                  <button className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-(--color-surface-strong) text-(--color-text-muted) transition-colors">
+                    <FiMoreVertical size={18} />
+                  </button>
+                </div>
+              </header>
+
+              {/* Messages Area */}
+              <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 bg-(--color-bg)">
+                {activeChat.messages.length > 0 ? (
+                  activeChat.messages.map((msg) => (
+                    <MessageBubble key={msg.id} msg={msg} />
+                  ))
+                ) : (
+                  <div className="flex h-full items-center justify-center text-sm text-(--color-text-muted)">
+                    No messages yet. Start the conversation!
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input Area */}
+              <div className="px-4 py-3 border-t border-(--color-border) bg-(--color-surface)">
+                <div className="flex items-center gap-3">
+                  <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-(--color-surface-strong) text-(--color-text-muted) transition-colors">
+                    <FiPaperclip size={20} />
+                  </button>
+                  <div className="flex-1 flex items-center gap-2 px-4 py-2 bg-(--color-surface-strong) rounded-2xl border border-transparent focus-within:border-(--color-primary) focus-within:ring-2 focus-within:ring-(--color-primary)/20 focus-within:bg-white transition-all">
+                    <input
+                      type="text"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                      placeholder="Type a message..."
+                      className="flex-1 bg-transparent text-sm text-(--color-text) placeholder:text-(--color-text-soft) focus:outline-none"
+                    />
+                    <button className="text-(--color-text-muted) hover:text-(--color-primary) transition-colors">
+                      <FiSmile size={22} />
+                    </button>
+                  </div>
+                  <button
+                    onClick={handleSend}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-(--color-primary) text-white hover:bg-(--color-primary-hover) transition-all shadow-sm hover:shadow-md hover:scale-105"
+                  >
+                    <FiSend size={16} />
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="hidden md:flex flex-col items-center justify-center h-full text-center px-6">
+              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-(--color-surface-strong) text-(--color-text-soft) mb-6">
+                <FiSend size={40} />
+              </div>
+              <h3 className="text-xl font-bold text-(--color-text)">
+                Your Messages
+              </h3>
+              <p className="mt-2 text-sm text-(--color-text-muted) max-w-xs">
+                Select a conversation from the list to start chatting with your
+                friends and groups.
+              </p>
+            </div>
+          )}
+        </section>
       </div>
     </main>
   );
