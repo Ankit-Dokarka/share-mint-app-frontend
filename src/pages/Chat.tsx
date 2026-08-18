@@ -11,6 +11,7 @@ import {
   FiUsers,
 } from "react-icons/fi";
 import { useGroup } from "../context/groups/GroupsContext";
+import useAuth from "../context/auth/AuthContext";
 
 type Message = {
   id: string;
@@ -29,7 +30,6 @@ type Chat = {
   unread: number;
   online: boolean;
   isGroup?: boolean;
-  messages: Message[];
 };
 
 const MessageBubble = memo(({ msg }: { msg: Message }) => (
@@ -64,7 +64,7 @@ const ChatListItem = memo(
   }: {
     chat: Chat;
     isActive: boolean;
-    onSelect: (id: string) => void; // Changed to string
+    onSelect: (id: string) => void;
   }) => (
     <button
       onClick={() => onSelect(chat.id)}
@@ -115,27 +115,29 @@ const ChatListItem = memo(
 ChatListItem.displayName = "ChatListItem";
 
 const Chat = () => {
-  const { groups } = useGroup(); // Fetching groups from context
+  const { groups } = useGroup();
+  const { user } = useAuth();
 
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Map API groups to UI Chat format
   const mappedChats: Chat[] = useMemo(() => {
     return groups.map((group) => ({
       id: group._id,
       name: group.name,
       avatar: group.name.charAt(0).toUpperCase(),
-      avatarBg: "bg-(--color-primary-soft) text-(--color-primary)", // Default color
-      lastMessage: group.description || "No messages yet", // Placeholder
+      avatarBg: "bg-(--color-primary-soft) text-(--color-primary)",
+      lastMessage: group.description || "No messages yet",
       time: group.createdAt
         ? new Date(group.createdAt).toLocaleDateString()
         : "",
-      unread: 0, // Placeholder
-      online: false, // Placeholder
+      unread: 0,
+      online: false,
       isGroup: true,
-      messages: [], // Empty for now until socket is connected
     }));
   }, [groups]);
 
@@ -145,11 +147,62 @@ const Chat = () => {
   );
 
   useEffect(() => {
+    const fetchMessages = async () => {
+      if (!activeChatId) return;
+
+      setIsLoadingMessages(true);
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/messages/${activeChatId}`,
+          {
+            credentials: "include",
+          },
+        );
+
+        if (!res.ok) throw new Error("Failed to fetch messages");
+
+        const data = await res.json();
+
+        const formattedMessages: Message[] = data.map((msg: any) => ({
+          id: msg._id,
+          text: msg.text,
+          time: new Date(msg.createdAt).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          sender: msg.sender?._id === user?._id ? "me" : "them",
+        }));
+
+        setMessages(formattedMessages);
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+        setMessages([]);
+      } finally {
+        setIsLoadingMessages(false);
+      }
+    };
+
+    fetchMessages();
+  }, [activeChatId, user?._id]);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [activeChatId]);
+  }, [messages]);
 
   const handleSend = useCallback(() => {
     if (!input.trim()) return;
+
+    const newMessage: Message = {
+      id: Date.now().toString(), // Temporary ID
+      text: input,
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      sender: "me",
+    };
+
+    setMessages((prev) => [...prev, newMessage]);
     setInput("");
   }, [input]);
 
@@ -249,8 +302,12 @@ const Chat = () => {
 
               {/* Messages Area */}
               <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 bg-(--color-bg)">
-                {activeChat.messages.length > 0 ? (
-                  activeChat.messages.map((msg) => (
+                {isLoadingMessages ? (
+                  <div className="flex h-full items-center justify-center text-sm text-(--color-text-muted)">
+                    Loading messages...
+                  </div>
+                ) : messages.length > 0 ? (
+                  messages.map((msg) => (
                     <MessageBubble key={msg.id} msg={msg} />
                   ))
                 ) : (
