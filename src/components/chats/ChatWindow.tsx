@@ -1,0 +1,125 @@
+import { memo, useRef, useEffect } from "react";
+import { FiArrowLeft, FiSend, FiUsers } from "react-icons/fi";
+import MessageBubble, { type Message } from "./MessageBubble";
+import { type Chat } from "./ChatList";
+
+const ChatWindow = memo(
+  ({
+    activeChat,
+    messages,
+    isLoadingMessages,
+    input,
+    onInputChange,
+    onSend,
+    onBack,
+    isSomeoneTyping,
+  }: {
+    activeChat: Chat | null;
+    messages: Message[];
+    isLoadingMessages: boolean;
+    input: string;
+    onInputChange: (val: string) => void;
+    onSend: () => void;
+    onBack: () => void;
+    isSomeoneTyping: boolean;
+  }) => {
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages, isSomeoneTyping]);
+
+    if (!activeChat) {
+      return (
+        <section className="hidden md:flex flex-col items-center justify-center h-full text-center px-6 bg-(--color-bg)">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-(--color-surface-strong) text-(--color-text-soft) mb-6">
+            <FiSend size={40} />
+          </div>
+          <h3 className="text-xl font-bold text-(--color-text)">
+            Your Messages
+          </h3>
+          <p className="mt-2 text-sm text-(--color-text-muted) max-w-xs">
+            Select a conversation from the list to start chatting with your
+            friends and groups.
+          </p>
+        </section>
+      );
+    }
+
+    return (
+      <section
+        className={`${activeChat ? "flex" : "hidden md:flex"} flex-col w-full h-full min-h-0 overflow-hidden bg-(--color-bg)`}
+      >
+        {/* Header */}
+        <header className="flex items-center gap-3 px-4 py-3 border-b border-(--color-border) bg-(--color-surface) z-10 shrink-0">
+          <button
+            onClick={onBack}
+            className="md:hidden flex h-9 w-9 items-center justify-center rounded-full hover:bg-(--color-surface-strong) text-(--color-text) transition-colors"
+          >
+            <FiArrowLeft size={20} />
+          </button>
+          <div className="relative shrink-0">
+            <div
+              className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${activeChat.avatarBg}`}
+            >
+              <FiUsers size={16} />
+            </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-sm font-semibold text-(--color-text) truncate">
+              {activeChat.name}
+            </h2>
+            <p className="text-xs text-(--color-text-muted) h-4">
+              {" "}
+              {isSomeoneTyping ? (
+                <span className="text-(--color-primary)">typing...</span>
+              ) : (
+                ""
+              )}
+            </p>
+          </div>
+        </header>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto min-h-0 px-4 py-6 space-y-4 bg-(--color-bg)">
+          {isLoadingMessages ? (
+            <div className="flex h-full items-center justify-center text-sm text-(--color-text-muted)">
+              Loading messages...
+            </div>
+          ) : messages.length > 0 ? (
+            messages.map((msg) => <MessageBubble key={msg.id} msg={msg} />)
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-(--color-text-muted)">
+              No messages yet. Start the conversation!
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input */}
+        <div className="px-4 py-3 border-t border-(--color-border) bg-(--color-surface) shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 flex items-center gap-2 px-4 py-2 bg-(--color-surface-strong) rounded-2xl border border-transparent focus-within:border-(--color-primary) focus-within:ring-2 focus-within:ring-(--color-primary)/20 focus-within:bg-(--color-surface) transition-all">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => onInputChange(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && onSend()}
+                placeholder="Type a message..."
+                className="flex-1 bg-transparent text-sm text-(--color-text) placeholder:text-(--color-text-soft) focus:outline-none"
+              />
+            </div>
+            <button
+              onClick={onSend}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-(--color-primary) text-white hover:bg-(--color-primary-hover) transition-all shadow-sm hover:shadow-md hover:scale-105"
+            >
+              <FiSend size={16} />
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  },
+);
+
+export default ChatWindow;

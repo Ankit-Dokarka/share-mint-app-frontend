@@ -8,7 +8,7 @@ import { ExpenseProvider } from "../context/expense/ExpenseProvider";
 export default function DashboardLayout() {
   const location = useLocation();
 
-  const isChatPage = location.pathname.startsWith("/chat");
+  const isChatPage = location.pathname.startsWith("/dashboard/chat");
 
   return (
     <GroupsProvider>
