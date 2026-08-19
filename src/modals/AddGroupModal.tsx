@@ -79,6 +79,7 @@ const SearchResultItem = memo(
         </div>
       </div>
       <button
+        type="button"
         onClick={() => onToggle(user)}
         className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-(--btn-radius) transition-colors ${
           isSelected
@@ -326,6 +327,7 @@ const AddGroupModal = ({ isOpen, onClose }: AddGroupModalProps) => {
 
         <div className="flex justify-end gap-3 p-5 bg-(--color-surface-strong)/50 border-t border-(--color-border) shrink-0">
           <button
+            type="button"
             onClick={handleClose}
             disabled={isCreatingGroup}
             className="px-4 py-2.5 text-sm font-semibold text-(--color-text) bg-(--color-surface) border border-(--color-border) rounded-(--btn-radius) hover:bg-(--color-surface-strong) transition-colors shadow-sm disabled:opacity-50"
@@ -333,6 +335,7 @@ const AddGroupModal = ({ isOpen, onClose }: AddGroupModalProps) => {
             Cancel
           </button>
           <button
+            type="submit"
             onClick={onSubmit}
             disabled={isCreatingGroup}
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-(--color-primary) hover:bg-(--color-primary-hover) rounded-(--btn-radius) transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
