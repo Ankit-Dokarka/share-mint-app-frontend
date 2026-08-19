@@ -1,5 +1,6 @@
 import { memo, useState } from "react";
 import { FiSearch, FiUsers } from "react-icons/fi";
+import type { User } from "../../types/user";
 
 export type Chat = {
   id: string;
@@ -11,6 +12,7 @@ export type Chat = {
   unread: number;
   online: boolean;
   isGroup?: boolean;
+  members?: User[];
 };
 
 const ChatList = memo(

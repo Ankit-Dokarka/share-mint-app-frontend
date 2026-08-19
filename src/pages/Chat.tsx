@@ -31,6 +31,7 @@ const Chat = () => {
       unread: 0,
       online: false,
       isGroup: true,
+      members: group.members,
     }));
   }, [groups]);
 
