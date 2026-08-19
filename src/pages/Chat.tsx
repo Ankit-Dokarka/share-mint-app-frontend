@@ -6,6 +6,46 @@ import ChatList, { type Chat } from "../components/chats/ChatList";
 import ChatWindow from "../components/chats/ChatWindow";
 import { type Message } from "../components/chats/MessageBubble";
 
+interface ApiUser {
+  _id: string;
+  fullName: string;
+  email: string;
+}
+
+interface DbSeenByEntry {
+  user: string;
+  seenAt: string;
+  _id: string;
+}
+
+interface ApiMessage {
+  _id: string;
+  message: string;
+  createdAt: string;
+  group: string;
+  sender: ApiUser;
+  seenBy?: DbSeenByEntry[];
+}
+
+interface SocketReceiveMessagePayload {
+  message: ApiMessage;
+}
+
+interface SocketErrorPayload {
+  message: string;
+}
+
+interface SocketTypingPayload {
+  userId: string;
+}
+
+interface SocketSeenPayload {
+  messageId: string;
+  userId: string;
+  fullName: string;
+  seenAt: string;
+}
+
 const Chat = () => {
   const { groups } = useGroup();
   const { user } = useAuth();
@@ -17,6 +57,7 @@ const Chat = () => {
   const [isSomeoneTyping, setIsSomeoneTyping] = useState(false);
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const emittedSeenRef = useRef<Set<string>>(new Set());
 
   const mappedChats: Chat[] = useMemo(() => {
     return groups.map((group) => ({
@@ -41,6 +82,27 @@ const Chat = () => {
   );
 
   useEffect(() => {
+    emittedSeenRef.current.clear();
+  }, [activeChatId]);
+
+  useEffect(() => {
+    if (!activeChatId || messages.length === 0) return;
+
+    const socket = getSocket();
+    if (!socket) return;
+
+    messages.forEach((msg) => {
+      if (msg.sender !== "me" && !emittedSeenRef.current.has(msg.id)) {
+        socket.emit("message-seen", {
+          messageId: msg.id,
+          groupId: activeChatId,
+        });
+        emittedSeenRef.current.add(msg.id);
+      }
+    });
+  }, [messages, activeChatId]);
+
+  useEffect(() => {
     const fetchMessages = async () => {
       if (!activeChatId) return;
       setIsLoadingMessages(true);
@@ -51,15 +113,39 @@ const Chat = () => {
         );
         if (!res.ok) throw new Error("Failed to fetch messages");
         const data = await res.json();
-        const formattedMessages: Message[] = data.messages.map((msg: any) => ({
-          id: msg._id,
-          text: msg.message,
-          time: new Date(msg.createdAt).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          sender: String(msg.sender?._id) === String(user?._id) ? "me" : "them",
-        }));
+
+        const currentGroup = groups.find((g) => g._id === activeChatId);
+        const groupMembers = currentGroup?.members || [];
+
+        const formattedMessages: Message[] = data.messages.map(
+          (msg: ApiMessage) => {
+            const seenBy = (msg.seenBy || []).map((s: DbSeenByEntry) => {
+              const member = groupMembers.find((m) => m._id === s.user);
+              return {
+                userId: String(s.user),
+                fullName: member?.fullName || "Unknown User",
+                seenAt: s.seenAt,
+              };
+            });
+
+            if (seenBy.some((s) => s.userId === String(user?._id))) {
+              emittedSeenRef.current.add(msg._id);
+            }
+
+            return {
+              id: msg._id,
+              text: msg.message,
+              time: new Date(msg.createdAt).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              sender:
+                String(msg.sender?._id) === String(user?._id) ? "me" : "them",
+              seenBy,
+            };
+          },
+        );
+
         setMessages(formattedMessages);
       } catch (error) {
         console.error("Error fetching messages:", error);
@@ -82,17 +168,32 @@ const Chat = () => {
         socket.emit("leave-group", activeChatId);
       }
     };
-  }, [activeChatId, user?._id]);
+  }, [activeChatId, user?._id, groups]);
 
   useEffect(() => {
     const socket = getSocket();
     if (!socket) return;
 
-    const handleReceiveMessage = (data: any) => {
+    const handleReceiveMessage = (data: SocketReceiveMessagePayload) => {
       if (data.message.group === activeChatId) {
         setMessages((prev) => {
           if (prev.some((m) => m.id === data.message._id)) return prev;
-          const senderId = data.message.sender?._id || data.message.sender;
+
+          const senderId = data.message.sender?._id || "";
+          const currentGroup = groups.find((g) => g._id === activeChatId);
+          const groupMembers = currentGroup?.members || [];
+
+          const formattedSeenBy = (data.message.seenBy || []).map(
+            (s: DbSeenByEntry) => {
+              const member = groupMembers.find((m) => m._id === s.user);
+              return {
+                userId: String(s.user),
+                fullName: member?.fullName || "Unknown User",
+                seenAt: s.seenAt,
+              };
+            },
+          );
+
           const newMsg: Message = {
             id: data.message._id,
             text: data.message.message,
@@ -101,6 +202,7 @@ const Chat = () => {
               minute: "2-digit",
             }),
             sender: String(senderId) === String(user?._id) ? "me" : "them",
+            seenBy: formattedSeenBy,
           };
           return [...prev, newMsg];
         });
@@ -108,33 +210,60 @@ const Chat = () => {
       }
     };
 
-    const handleChatError = (data: any) =>
+    const handleChatError = (data: SocketErrorPayload) =>
       console.error("❌ SOCKET ERROR:", data.message);
 
-    const handleUserTyping = (data: any) => {
+    const handleUserTyping = (data: SocketTypingPayload) => {
       if (String(data.userId) !== String(user?._id)) {
         setIsSomeoneTyping(true);
       }
     };
 
-    const handleUserStoppedTyping = (data: any) => {
+    const handleUserStoppedTyping = (data: SocketTypingPayload) => {
       if (String(data.userId) !== String(user?._id)) {
         setIsSomeoneTyping(false);
       }
+    };
+
+    const handleMessageSeen = (data: SocketSeenPayload) => {
+      if (String(data.userId) === String(user?._id)) return;
+
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id === data.messageId) {
+            const existingSeen = m.seenBy || [];
+            if (existingSeen.some((s) => s.userId === data.userId)) return m;
+            return {
+              ...m,
+              seenBy: [
+                ...existingSeen,
+                {
+                  userId: data.userId,
+                  fullName: data.fullName,
+                  seenAt: data.seenAt,
+                },
+              ],
+            };
+          }
+          return m;
+        }),
+      );
     };
 
     socket.on("receive-message", handleReceiveMessage);
     socket.on("chat-error", handleChatError);
     socket.on("user-typing", handleUserTyping);
     socket.on("user-stopped-typing", handleUserStoppedTyping);
+    socket.on("message-seen", handleMessageSeen);
 
     return () => {
       socket.off("receive-message", handleReceiveMessage);
       socket.off("chat-error", handleChatError);
       socket.off("user-typing", handleUserTyping);
       socket.off("user-stopped-typing", handleUserStoppedTyping);
+      socket.off("message-seen", handleMessageSeen);
     };
-  }, [activeChatId, user?._id]);
+  }, [activeChatId, user?._id, groups]);
 
   const handleInputChange = useCallback(
     (val: string) => {

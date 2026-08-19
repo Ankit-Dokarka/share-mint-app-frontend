@@ -133,33 +133,37 @@ const ChatWindow = memo(
               </button>
             </header>
 
-            <div className="flex-1 overflow-y-auto min-h-0 px-4 py-6 space-y-4 bg-(--color-bg)">
-              {isLoadingMessages ? (
-                <>
-                  <div className="flex justify-start">
-                    <div className="h-10 w-40 rounded-2xl rounded-bl-md bg-(--color-surface-strong) animate-pulse"></div>
+            <div className="flex-1 overflow-y-auto min-h-0 bg-(--color-bg)">
+              <div className="flex flex-col justify-end min-h-full gap-4 px-4 py-6">
+                {isLoadingMessages ? (
+                  <>
+                    <div className="flex justify-start">
+                      <div className="h-10 w-40 rounded-2xl rounded-bl-md bg-(--color-surface-strong) animate-pulse"></div>
+                    </div>
+                    <div className="flex justify-end">
+                      <div className="h-10 w-28 rounded-2xl rounded-br-md bg-(--color-surface-strong) animate-pulse"></div>
+                    </div>
+                    <div className="flex justify-start">
+                      <div className="h-10 w-52 rounded-2xl rounded-bl-md bg-(--color-surface-strong) animate-pulse"></div>
+                    </div>
+                    <div className="flex justify-end">
+                      <div className="h-10 w-24 rounded-2xl rounded-br-md bg-(--color-surface-strong) animate-pulse"></div>
+                    </div>
+                    <div className="flex justify-start">
+                      <div className="h-10 w-36 rounded-2xl rounded-bl-md bg-(--color-surface-strong) animate-pulse"></div>
+                    </div>
+                  </>
+                ) : messages.length > 0 ? (
+                  messages.map((msg) => (
+                    <MessageBubble key={msg.id} msg={msg} />
+                  ))
+                ) : (
+                  <div className="flex-1 flex items-center justify-center text-sm text-(--color-text-muted)">
+                    No messages yet. Start the conversation!
                   </div>
-                  <div className="flex justify-end">
-                    <div className="h-10 w-28 rounded-2xl rounded-br-md bg-(--color-surface-strong) animate-pulse"></div>
-                  </div>
-                  <div className="flex justify-start">
-                    <div className="h-10 w-52 rounded-2xl rounded-bl-md bg-(--color-surface-strong) animate-pulse"></div>
-                  </div>
-                  <div className="flex justify-end">
-                    <div className="h-10 w-24 rounded-2xl rounded-br-md bg-(--color-surface-strong) animate-pulse"></div>
-                  </div>
-                  <div className="flex justify-start">
-                    <div className="h-10 w-36 rounded-2xl rounded-bl-md bg-(--color-surface-strong) animate-pulse"></div>
-                  </div>
-                </>
-              ) : messages.length > 0 ? (
-                messages.map((msg) => <MessageBubble key={msg.id} msg={msg} />)
-              ) : (
-                <div className="flex h-full items-center justify-center text-sm text-(--color-text-muted)">
-                  No messages yet. Start the conversation!
-                </div>
-              )}
-              <div ref={messagesEndRef} />
+                )}
+                <div ref={messagesEndRef} />
+              </div>
             </div>
 
             <div className="px-4 py-3 border-t border-(--color-border) bg-(--color-surface) shrink-0">
