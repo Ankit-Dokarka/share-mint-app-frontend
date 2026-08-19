@@ -135,9 +135,23 @@ const ChatWindow = memo(
 
             <div className="flex-1 overflow-y-auto min-h-0 px-4 py-6 space-y-4 bg-(--color-bg)">
               {isLoadingMessages ? (
-                <div className="flex h-full items-center justify-center text-sm text-(--color-text-muted)">
-                  Loading messages...
-                </div>
+                <>
+                  <div className="flex justify-start">
+                    <div className="h-10 w-40 rounded-2xl rounded-bl-md bg-(--color-surface-strong) animate-pulse"></div>
+                  </div>
+                  <div className="flex justify-end">
+                    <div className="h-10 w-28 rounded-2xl rounded-br-md bg-(--color-surface-strong) animate-pulse"></div>
+                  </div>
+                  <div className="flex justify-start">
+                    <div className="h-10 w-52 rounded-2xl rounded-bl-md bg-(--color-surface-strong) animate-pulse"></div>
+                  </div>
+                  <div className="flex justify-end">
+                    <div className="h-10 w-24 rounded-2xl rounded-br-md bg-(--color-surface-strong) animate-pulse"></div>
+                  </div>
+                  <div className="flex justify-start">
+                    <div className="h-10 w-36 rounded-2xl rounded-bl-md bg-(--color-surface-strong) animate-pulse"></div>
+                  </div>
+                </>
               ) : messages.length > 0 ? (
                 messages.map((msg) => <MessageBubble key={msg.id} msg={msg} />)
               ) : (
