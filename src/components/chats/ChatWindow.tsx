@@ -12,7 +12,7 @@ const ChatWindow = memo(
     onInputChange,
     onSend,
     onBack,
-    isSomeoneTyping,
+    typingUser,
   }: {
     activeChat: Chat | null;
     messages: Message[];
@@ -21,14 +21,14 @@ const ChatWindow = memo(
     onInputChange: (val: string) => void;
     onSend: () => void;
     onBack: () => void;
-    isSomeoneTyping: boolean;
+    typingUser: string | null;
   }) => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [showDetails, setShowDetails] = useState(false);
 
     useEffect(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages, isSomeoneTyping]);
+    }, [messages, typingUser]);
 
     if (!activeChat) {
       return (
@@ -101,33 +101,32 @@ const ChatWindow = memo(
             <header className="flex items-center gap-3 px-4 py-3 border-b border-(--color-border) bg-(--color-surface) z-10 shrink-0">
               <button
                 onClick={onBack}
-                className="md:hidden flex h-9 w-9 items-center justify-center rounded-full hover:bg-(--color-surface-strong) text-(--color-text) transition-colors"
+                className="md:hidden flex h-9 w-9 items-center justify-center rounded-full hover:bg-(--color-surface-strong) text-(--color-text) transition-colors shrink-0"
               >
                 <FiArrowLeft size={20} />
               </button>
-              <div className="relative shrink-0">
+              <div className="shrink-0">
                 <div
                   className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${activeChat.avatarBg}`}
                 >
                   <FiUsers size={16} />
                 </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-sm font-semibold text-(--color-text) truncate">
+              <div className="flex-1 min-w-0 flex flex-col justify-center">
+                <h2 className="text-sm font-semibold text-(--color-text) truncate leading-tight">
                   {activeChat.name}
                 </h2>
-                <p className="text-xs text-(--color-text-muted) h-4">
-                  {" "}
-                  {isSomeoneTyping ? (
-                    <span className="text-(--color-primary)">typing...</span>
-                  ) : (
-                    ""
-                  )}
+                <p className="text-xs text-(--color-text-muted) h-4 leading-none mt-0.5 truncate">
+                  {typingUser ? (
+                    <span className="text-(--color-primary)">
+                      {typingUser} is typing...
+                    </span>
+                  ) : null}
                 </p>
               </div>
               <button
                 onClick={() => setShowDetails(true)}
-                className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-(--color-surface-strong) text-(--color-text) transition-colors"
+                className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-(--color-surface-strong) text-(--color-text) transition-colors shrink-0"
               >
                 <FiInfo size={20} />
               </button>

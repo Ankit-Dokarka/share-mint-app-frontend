@@ -77,23 +77,26 @@ const ChatList = memo(
                   </div>
                 </div>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0 flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-semibold text-(--color-text) truncate">
                       {chat.name}
                     </h3>
-                    <span className="text-[11px] text-(--color-text-soft) shrink-0">
-                      {chat.time}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-2 mt-0.5">
-                    <p className="text-xs text-(--color-text-muted) truncate">
+                    <p className="text-xs text-(--color-text-muted) truncate mt-0.5">
                       {chat.lastMessage}
                     </p>
-                    {chat.unread > 0 && (
-                      <span className="shrink-0 flex h-5 min-w-5 px-1.5 items-center justify-center rounded-full bg-(--color-primary) text-[10px] font-bold text-white">
+                  </div>
+
+                  <div className="flex flex-col items-end justify-center gap-1 shrink-0 w-20">
+                    <span className="text-[11px] text-(--color-text-soft)">
+                      {chat.time}
+                    </span>
+                    {chat.unread > 0 ? (
+                      <span className="flex h-5 min-w-5 px-1.5 items-center justify-center rounded-full bg-(--color-primary) text-[10px] font-bold text-white">
                         {chat.unread}
                       </span>
+                    ) : (
+                      <span className="flex h-5 min-w-5 items-center"></span>
                     )}
                   </div>
                 </div>

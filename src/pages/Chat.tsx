@@ -37,6 +37,7 @@ interface SocketErrorPayload {
 
 interface SocketTypingPayload {
   userId: string;
+  fullName: string;
 }
 
 interface SocketSeenPayload {
@@ -44,6 +45,17 @@ interface SocketSeenPayload {
   userId: string;
   fullName: string;
   seenAt: string;
+}
+
+interface SocketUnreadCountPayload {
+  groupId: string;
+  count: number;
+}
+
+interface SocketGroupMessagesSeenPayload {
+  groupId: string;
+  userId: string;
+  fullName: string;
 }
 
 const Chat = () => {
@@ -54,10 +66,10 @@ const Chat = () => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
-  const [isSomeoneTyping, setIsSomeoneTyping] = useState(false);
+  const [typingUser, setTypingUser] = useState<string | null>(null);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const emittedSeenRef = useRef<Set<string>>(new Set());
 
   const mappedChats: Chat[] = useMemo(() => {
     return groups.map((group) => ({
@@ -65,16 +77,16 @@ const Chat = () => {
       name: group.name,
       avatar: group.name.charAt(0).toUpperCase(),
       avatarBg: "bg-(--color-primary-soft) text-(--color-primary)",
-      lastMessage: group.description || "No messages yet",
+      lastMessage: group.description || "",
       time: group.createdAt
         ? new Date(group.createdAt).toLocaleDateString()
         : "",
-      unread: 0,
+      unread: unreadCounts[group._id] || 0,
       online: false,
       isGroup: true,
       members: group.members,
     }));
-  }, [groups]);
+  }, [groups, unreadCounts]);
 
   const activeChat = useMemo(
     () => mappedChats.find((c) => c.id === activeChatId) || null,
@@ -82,25 +94,13 @@ const Chat = () => {
   );
 
   useEffect(() => {
-    emittedSeenRef.current.clear();
-  }, [activeChatId]);
-
-  useEffect(() => {
-    if (!activeChatId || messages.length === 0) return;
-
     const socket = getSocket();
-    if (!socket) return;
+    if (!socket || groups.length === 0) return;
 
-    messages.forEach((msg) => {
-      if (msg.sender !== "me" && !emittedSeenRef.current.has(msg.id)) {
-        socket.emit("message-seen", {
-          messageId: msg.id,
-          groupId: activeChatId,
-        });
-        emittedSeenRef.current.add(msg.id);
-      }
+    groups.forEach((group) => {
+      socket.emit("get-initial-unread-count", { groupId: group._id });
     });
-  }, [messages, activeChatId]);
+  }, [groups]);
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -119,18 +119,16 @@ const Chat = () => {
 
         const formattedMessages: Message[] = data.messages.map(
           (msg: ApiMessage) => {
-            const seenBy = (msg.seenBy || []).map((s: DbSeenByEntry) => {
-              const member = groupMembers.find((m) => m._id === s.user);
-              return {
-                userId: String(s.user),
-                fullName: member?.fullName || "Unknown User",
-                seenAt: s.seenAt,
-              };
-            });
-
-            if (seenBy.some((s) => s.userId === String(user?._id))) {
-              emittedSeenRef.current.add(msg._id);
-            }
+            const seenBy = (msg.seenBy || [])
+              .map((s: DbSeenByEntry) => {
+                const member = groupMembers.find((m) => m._id === s.user);
+                return {
+                  userId: String(s.user),
+                  fullName: member?.fullName || "Unknown User",
+                  seenAt: s.seenAt,
+                };
+              })
+              .filter((s) => s.userId !== String(user?._id));
 
             return {
               id: msg._id,
@@ -156,11 +154,12 @@ const Chat = () => {
     };
 
     fetchMessages();
-    setIsSomeoneTyping(false);
+    setTypingUser(null);
 
     const socket = getSocket();
     if (socket && activeChatId) {
       socket.emit("join-group", activeChatId);
+      socket.emit("mark-group-seen", { groupId: activeChatId });
     }
 
     return () => {
@@ -183,16 +182,16 @@ const Chat = () => {
           const currentGroup = groups.find((g) => g._id === activeChatId);
           const groupMembers = currentGroup?.members || [];
 
-          const formattedSeenBy = (data.message.seenBy || []).map(
-            (s: DbSeenByEntry) => {
+          const formattedSeenBy = (data.message.seenBy || [])
+            .map((s: DbSeenByEntry) => {
               const member = groupMembers.find((m) => m._id === s.user);
               return {
                 userId: String(s.user),
                 fullName: member?.fullName || "Unknown User",
                 seenAt: s.seenAt,
               };
-            },
-          );
+            })
+            .filter((s) => s.userId !== String(user?._id));
 
           const newMsg: Message = {
             id: data.message._id,
@@ -204,9 +203,17 @@ const Chat = () => {
             sender: String(senderId) === String(user?._id) ? "me" : "them",
             seenBy: formattedSeenBy,
           };
+
+          if (String(senderId) !== String(user?._id)) {
+            socket.emit("message-seen", {
+              messageId: data.message._id,
+              groupId: activeChatId,
+            });
+          }
+
           return [...prev, newMsg];
         });
-        setIsSomeoneTyping(false);
+        setTypingUser(null);
       }
     };
 
@@ -215,13 +222,13 @@ const Chat = () => {
 
     const handleUserTyping = (data: SocketTypingPayload) => {
       if (String(data.userId) !== String(user?._id)) {
-        setIsSomeoneTyping(true);
+        setTypingUser(data.fullName);
       }
     };
 
     const handleUserStoppedTyping = (data: SocketTypingPayload) => {
       if (String(data.userId) !== String(user?._id)) {
-        setIsSomeoneTyping(false);
+        setTypingUser(null);
       }
     };
 
@@ -250,11 +257,52 @@ const Chat = () => {
       );
     };
 
+    const handleUnreadCount = (data: SocketUnreadCountPayload) => {
+      setUnreadCounts((prev) => ({
+        ...prev,
+        [data.groupId]: data.count,
+      }));
+    };
+
+    const handleGroupMessagesSeen = (data: SocketGroupMessagesSeenPayload) => {
+      setUnreadCounts((prev) => ({
+        ...prev,
+        [data.groupId]: 0,
+      }));
+
+      if (data.userId === String(user?._id)) return;
+
+      setMessages((prev) => {
+        if (activeChatId !== data.groupId) return prev;
+        return prev.map((m) => {
+          if (m.sender === "me") {
+            const existingSeen = m.seenBy || [];
+            if (!existingSeen.some((s) => s.userId === data.userId)) {
+              return {
+                ...m,
+                seenBy: [
+                  ...existingSeen,
+                  {
+                    userId: data.userId,
+                    fullName: data.fullName,
+                    seenAt: new Date().toISOString(),
+                  },
+                ],
+              };
+            }
+          }
+          return m;
+        });
+      });
+    };
+
     socket.on("receive-message", handleReceiveMessage);
     socket.on("chat-error", handleChatError);
     socket.on("user-typing", handleUserTyping);
     socket.on("user-stopped-typing", handleUserStoppedTyping);
     socket.on("message-seen", handleMessageSeen);
+    socket.on("unread-count", handleUnreadCount);
+    socket.on("group-messages-seen", handleGroupMessagesSeen);
 
     return () => {
       socket.off("receive-message", handleReceiveMessage);
@@ -262,6 +310,8 @@ const Chat = () => {
       socket.off("user-typing", handleUserTyping);
       socket.off("user-stopped-typing", handleUserStoppedTyping);
       socket.off("message-seen", handleMessageSeen);
+      socket.off("unread-count", handleUnreadCount);
+      socket.off("group-messages-seen", handleGroupMessagesSeen);
     };
   }, [activeChatId, user?._id, groups]);
 
@@ -314,7 +364,7 @@ const Chat = () => {
           onInputChange={handleInputChange}
           onSend={handleSend}
           onBack={() => setActiveChatId(null)}
-          isSomeoneTyping={isSomeoneTyping}
+          typingUser={typingUser}
         />
       </div>
     </main>
