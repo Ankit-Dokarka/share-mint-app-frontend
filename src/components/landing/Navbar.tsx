@@ -49,7 +49,7 @@ const MouseTrackingButton = memo(
         }
         className={`group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-(--btn-radius) bg-(--color-primary) font-semibold text-white transition-all duration-300 hover:shadow-md ${className}`}
       >
-        <span className="absolute inset-0 z-0 bg-[#be123c] [clip-path:circle(0%_at_var(--mouse-x)_var(--mouse-y))] transition-[clip-path] duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:[clip-path:circle(150%_at_var(--mouse-x)_var(--mouse-y))]" />
+        <span className="absolute inset-0 z-0 bg-[#34D399] [clip-path:circle(0%_at_var(--mouse-x)_var(--mouse-y))] transition-[clip-path] duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:[clip-path:circle(150%_at_var(--mouse-x)_var(--mouse-y))]" />
         <span className="relative z-10 flex items-center gap-2">
           {children}
         </span>
