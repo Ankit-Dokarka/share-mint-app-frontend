@@ -139,6 +139,10 @@ const Chat = () => {
               }),
               sender:
                 String(msg.sender?._id) === String(user?._id) ? "me" : "them",
+              senderName:
+                String(msg.sender?._id) === String(user?._id)
+                  ? "You"
+                  : msg.sender?.fullName || "Unknown User",
               seenBy,
             };
           },
@@ -201,6 +205,10 @@ const Chat = () => {
               minute: "2-digit",
             }),
             sender: String(senderId) === String(user?._id) ? "me" : "them",
+            senderName:
+              String(senderId) === String(user?._id)
+                ? "You"
+                : data.message.sender?.fullName || "Unknown User",
             seenBy: formattedSeenBy,
           };
 
