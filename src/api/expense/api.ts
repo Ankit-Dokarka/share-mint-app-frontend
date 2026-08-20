@@ -4,32 +4,21 @@ import type {
   Expense,
   Balance,
 } from "../../types/expence";
-
-const BASE_URL = import.meta.env.VITE_API_URL;
-
-async function handleResponse<T>(response: Response): Promise<T> {
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.message || "An unexpected error occurred");
-  }
-  return data as T;
-}
+import { apiRequest } from "../request";
 
 export const expenseAPI = {
   async getGroupExpenses(groupId: string): Promise<GroupExpensesResponse> {
-    const [expensesRes, balancesRes] = await Promise.all([
-      fetch(`${BASE_URL}/api/expenses/group/${groupId}`, {
-        credentials: "include",
+    const [expensesData, balancesData] = await Promise.all([
+      apiRequest<{ expenses: Expense[] }>({
+        method: "GET",
+        url: `/api/expenses/group/${groupId}`,
       }),
-      fetch(`${BASE_URL}/api/balances/${groupId}`, { credentials: "include" }),
-    ]);
 
-    const expensesData = await handleResponse<{ expenses: Expense[] }>(
-      expensesRes,
-    );
-    const balancesData = await handleResponse<{ balances: Balance[] }>(
-      balancesRes,
-    );
+      apiRequest<{ balances: Balance[] }>({
+        method: "GET",
+        url: `/api/balances/${groupId}`,
+      }),
+    ]);
 
     return {
       success: true,
@@ -39,12 +28,10 @@ export const expenseAPI = {
   },
 
   async createExpense(payload: CreateExpensePayload) {
-    const response = await fetch(`${BASE_URL}/api/expenses`, {
+    return apiRequest({
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(payload),
+      url: "/api/expenses",
+      data: payload,
     });
-    return handleResponse(response);
   },
 };

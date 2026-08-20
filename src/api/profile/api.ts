@@ -1,55 +1,30 @@
-export const BASE_URL = import.meta.env.VITE_API_URL;
+import { apiRequest } from "../request";
+import type { ProfileResponse } from "../../types/user";
 
 export const profileAPI = {
   async getProfile() {
-    const response = await fetch(`${BASE_URL}/api/users/profile`, {
+    return apiRequest<ProfileResponse>({
       method: "GET",
-      credentials: "include",
+      url: "/api/users/profile",
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message);
-    }
-
-    return data;
   },
 
   async updateProfile(fullName: string) {
-    const response = await fetch(`${BASE_URL}/api/users/profile`, {
+    return apiRequest<ProfileResponse>({
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify({ fullName }),
+      url: "/api/users/profile",
+      data: { fullName },
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message);
-    }
-
-    return data;
   },
+
   async updateAvatar(file: File) {
     const formData = new FormData();
     formData.append("avatar", file);
 
-    const response = await fetch(`${BASE_URL}/api/users/avatar`, {
+    return apiRequest<ProfileResponse>({
       method: "PUT",
-      credentials: "include",
-      body: formData,
+      url: "/api/users/avatar",
+      data: formData,
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message);
-    }
-
-    return data;
   },
 };

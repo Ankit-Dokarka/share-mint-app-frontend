@@ -1,60 +1,57 @@
 import type { AuthResponse } from "../../types/auth";
-
-export const BASE_URL = import.meta.env.VITE_API_URL;
-
-async function apiRequest<T>(
-  endpoint: string,
-  options: RequestInit = {},
-): Promise<T> {
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(data.message || "An unexpected error occurred");
-  }
-
-  return data as T;
-}
+import { apiRequest } from "../request";
 
 export const authAPI = {
-  checkAuth: () => apiRequest<AuthResponse>("/api/auth/check"),
-
-  googleLogin: (idToken: string) =>
-    apiRequest<AuthResponse>("/api/auth/google", {
-      method: "POST",
-      body: JSON.stringify({ idToken }),
+  checkAuth: () =>
+    apiRequest<AuthResponse>({
+      method: "GET",
+      url: "/api/auth/check",
     }),
 
-  logout: () => apiRequest<void>("/api/auth/logout", { method: "POST" }),
+  googleLogin: (idToken: string) =>
+    apiRequest<AuthResponse>({
+      method: "POST",
+      url: "/api/auth/google",
+      data: { idToken },
+    }),
+
+  logout: () =>
+    apiRequest<void>({
+      method: "POST",
+      url: "/api/auth/logout",
+    }),
 
   register: (fullName: string, email: string, password: string) =>
-    apiRequest<AuthResponse>("/api/auth/register", {
+    apiRequest<AuthResponse>({
       method: "POST",
-      body: JSON.stringify({ fullName, email, password }),
+      url: "/api/auth/register",
+      data: { fullName, email, password },
     }),
 
   login: (email: string, password: string) =>
-    apiRequest<AuthResponse>("/api/auth/login", {
+    apiRequest<AuthResponse>({
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      url: "/api/auth/login",
+      data: { email, password },
     }),
 
   verifyEmail: (email: string, otp: string) =>
-    apiRequest<AuthResponse>("/api/auth/verify-otp", {
+    apiRequest<AuthResponse>({
       method: "POST",
-      body: JSON.stringify({ email, otp }),
+      url: "/api/auth/verify-otp",
+      data: { email, otp },
     }),
 
   resendOTP: (email: string) =>
-    apiRequest<AuthResponse>("/api/auth/resend-otp", {
+    apiRequest<AuthResponse>({
       method: "POST",
-      body: JSON.stringify({ email }),
+      url: "/api/auth/resend-otp",
+      data: { email },
     }),
 
-  getProfile: () => apiRequest<AuthResponse>("/api/users/profile"),
+  getProfile: () =>
+    apiRequest<AuthResponse>({
+      method: "GET",
+      url: "/api/users/profile",
+    }),
 };
